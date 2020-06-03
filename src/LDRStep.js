@@ -53,3 +53,58 @@ LDRStep.prototype.addConditionalLine = function (c, p1, p2, p3, p4) {
     this.conditionalLines.push(new LDR.Line5(c, p1, p2, p3, p4));
     // texmapPlacement && texmapPlacement.use();
 }
+
+/*
+  Split all color/partType into separate steps with one step containing only parts.
+  
+  this.subModels = [];
+  this.rotation = null;
+ */
+LDRStep.prototype.cleanUp = function (loader, newSteps) {
+    if (this.isEmpty() || this.hasPrimitives) {
+        newSteps.push(this);
+        return; // Primitive-containing or empty step - just keep existing.
+    }
+
+    // Collect info:
+    let self = this;
+    let parts = [];
+    let subModelsByTypeAndColor = {};
+
+    function handleSubModel(subModelDesc) {
+        let subModel = loader.getPartType(subModelDesc.ID);
+        if (!subModel || subModel.isPart) {
+            parts.push(subModelDesc);
+        }
+        else { // Not a part:
+            subModel.cleanUp(loader);
+            let key = subModelDesc.c + '_' + subModel.ID;
+            if (subModelsByTypeAndColor.hasOwnProperty(key)) {
+                subModelsByTypeAndColor[key].push(subModelDesc);
+            }
+            else {
+                subModelsByTypeAndColor[key] = [subModelDesc];
+            }
+        }
+    }
+    this.subModels.forEach(handleSubModel);
+
+    function push(subModels) {
+        let newStep = new LDRStep();
+        newStep.subModels = subModels;
+        // newStep.rotation = self.rotation ? self.rotation.clone() : null;
+        newSteps.push(newStep);
+    }
+
+    // Split into separate steps if necessary:
+    for (let key in subModelsByTypeAndColor) {
+        if (subModelsByTypeAndColor.hasOwnProperty(key)) {
+            push(subModelsByTypeAndColor[key]);
+        }
+    }
+
+    // Finally add step for just the parts:
+    if (parts.length > 0) {
+        push(parts);
+    }
+}

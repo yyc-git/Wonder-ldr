@@ -12,7 +12,7 @@ let LDRPartType = function () {
     this.ldraw_org;
     // this.geometry;
     // this.cnt = -1;
-    // this.cleanSteps = false;
+    this.cleanSteps = false;
     // this.certifiedBFC;
     // this.CCW;
     this.consistentFileAndName;
@@ -106,4 +106,27 @@ LDRPartType.prototype.isOfficialLDraw = function () {
     let lo = this.ldraw_org.split(' ')[0]; // First token.
     return lo === 'Part' || lo === 'Primitive' || lo === 'Subpart' ||
         lo === '8_Primitive' || lo === '48_Primitive' || lo === 'Shortcut';
+}
+
+
+
+/*
+  Clean up all steps.
+  This can cause additional steps (such as when a step contains both parts and sub models.
+ */
+LDRPartType.prototype.cleanUp = function (loader) {
+    if (this.cleanSteps) {
+        return; // Already done.
+    }
+    this.cleanSteps = true;
+
+    // if (this.isReplacedPart()) {
+    //     this.replacement = this.steps[0].subModels[0].ID;
+    //     //loader.onWarning({message:'The part "' + this.ID + '" has been replaced by "' + this.replacement + '".', line:0, subModel:this.ID});
+    // }
+    // else {
+    let newSteps = [];
+    this.steps.forEach(step => step.cleanUp(loader, newSteps));
+    this.steps = newSteps;
+    // }
 }

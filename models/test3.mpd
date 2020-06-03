@@ -1,9 +1,17 @@
 0 FILE test3.mpd
 0 Name: test3.mpd
 0 Author: Lasse Deleuran [Lasse Deleuran]
+1 34 20 20 0 1 0 0 0 1 0 0 0 1 test0.ldr
 1 34 20 20 0 1 0 0 0 1 0 0 0 1 test.ldr
 0 STEP
 1 1 -40 0 0 1 0 0 0 1 0 0 0 1 stud.dat
+
+
+0 FILE test0.ldr
+0 Name: test0.ldr
+0 Author: Lasse Deleuran [Lasse Deleuran]
+1 1 -40 0 0 1 0 0 0 1 0 0 0 1 stud.dat
+1 34 40 20 0 1 0 0 0 1 0 0 0 1 test2.ldr
 
 
 0 FILE test.ldr

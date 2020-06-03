@@ -562,8 +562,8 @@ LDRLoader.prototype.onPartsLoaded = function (id, loadedParts) {
     // Set part info (part vs non-part):
     loadedParts.forEach(pt => pt.isPart = pt.computeIsPart(self));
 
-    // // Clean up parts and purge those that are empty:
-    // loadedParts.forEach(pt => pt.cleanUp(self));
+    // Clean up parts and purge those that are empty:
+    loadedParts.forEach(pt => pt.cleanUp(self));
     // loadedParts.forEach(pt => { if (pt.steps.length === 0) self.purgePart(pt.ID); });
 
     // // Handle assemblies:
