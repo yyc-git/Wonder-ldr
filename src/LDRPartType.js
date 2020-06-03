@@ -130,3 +130,137 @@ LDRPartType.prototype.cleanUp = function (loader) {
     this.steps = newSteps;
     // }
 }
+
+
+LDRPartType.prototype.ensureGeometry = function (loader) {
+    if (this.geometry) {
+        return; // Already prepared.
+    }
+    this.geometry = new LDR.LDRGeometry();
+    this.geometry.fromPartType(loader, this);
+    // if (loader.cleanUpPrimitivesAndSubParts) {
+    //     this.removePrimitivesAndSubParts(loader);
+    // }
+}
+
+// LDRPartType.prototype.generateThreePart = function (loader, c, p, r, cull, inv, mc, pd, taskList) {
+// LDRPartType.prototype.generateThreePart = function (loader, c, p, r, cull, inv, mc, pd) {
+LDRPartType.prototype.generateThreePart = function (loader, c, p, r, mc, pd) {
+    if (!this.geometry) {
+        if (this.isPart) {
+            // if (taskList) {
+            //     let self = this;
+            //     taskList.push(() => self.generateThreePart(loader, c, p, r, cull, inv, mc, pd));
+            //     mc.expandBoundingBoxByPoint(p); // Assumes p is within the part.
+            //     return;
+            // }
+            // else {
+            this.ensureGeometry(loader);
+            // }
+        }
+        else {
+            // this.steps.forEach(step => step.generateThreePart(loader, c, p, r, cull, inv, mc, taskList));
+            // this.steps.forEach(step => step.generateThreePart(loader, c, p, r, cull, inv, mc));
+            this.steps.forEach(step => step.generateThreePart(loader, c, p, r, mc));
+            return;
+        }
+    }
+
+    // if (loader.physicalRenderingAge === 0) {
+    this.geometry.buildGeometriesAndColors();
+    // }
+    // else {
+    //     this.geometry.buildPhysicalGeometriesAndColors();
+    // }
+
+    let m3e = adapter.Matrix3.getElements(r);
+    let m4 = adapter.Matrix4.create(m3e[0], m3e[3], m3e[6], p.x,
+        m3e[1], m3e[4], m3e[7], p.y,
+        m3e[2], m3e[5], m3e[8], p.z,
+        0, 0, 0, 1
+    );
+
+    if (this.geometry.lineGeometry) {
+        let material = new LDR.Colors.buildLineMaterial(this.geometry.lineColorManager, c, false);
+        let normalLines = adapter.LineSegments.create(this.geometry.lineGeometry, material);
+        normalLines = adapter.LineSegments.applyMatrix4(m4, normalLines);
+        mc.addLines(normalLines, pd, false);
+    }
+
+    if (this.geometry.conditionalLineGeometry) {
+        let material = new LDR.Colors.buildLineMaterial(this.geometry.lineColorManager, c, true);
+        let conditionalLines = adapter.LineSegments.create(this.geometry.conditionalLineGeometry, material);
+        conditionalLines = adapter.LineSegments.applyMatrix4(m4, conditionalLines);
+        mc.addLines(conditionalLines, pd, true);
+    }
+
+    // Normal triangle geometries:
+    for (let tc in this.geometry.triangleGeometries) {
+        if (!this.geometry.triangleGeometries.hasOwnProperty(tc)) {
+            continue;
+        }
+        let g = this.geometry.triangleGeometries[tc];
+
+        let material;
+        // if (loader.physicalRenderingAge === 0) { // Simple rendering:
+        let triangleColorManager = new LDR.ColorManager();
+        triangleColorManager.get(tc); // Ensure color is present.
+        material = new LDR.Colors.buildTriangleMaterial(triangleColorManager, c, false);
+        // }
+        // else { // Physical rendering:
+        //     tc = tc === '16' ? c : tc;
+        //     material = LDR.Colors.buildStandardMaterial(tc);
+        // }
+        let mesh = adapter.Mesh.create(adapter.Geometry.clone(g), material); // Using clone to ensure matrix in next line doesn't affect other usages of the geometry.
+        // mesh.castShadow = loader.physicalRenderingAge !== 0;
+        mesh = adapter.Mesh.setCastShadow(false, mesh);
+        mesh = adapter.Mesh.applyMatrix4(m4, mesh);// Doesn't work for all LDraw parts as the matrix needs to be decomposable to position, quaternion and scale. Some rotation matrices in LDraw parts are not decomposable.
+        mc.addMesh(tc, mesh, pd);
+    }
+
+    // let self = this;
+    // for (let idx in this.geometry.texmapGeometries) { // Texmap geometries:
+    //     if (!this.geometry.texmapGeometries.hasOwnProperty(idx)) {
+    //         continue;
+    //     }
+    //     this.geometry.texmapGeometries[idx].forEach(obj => {
+    //         let g = obj.g, c2 = obj.c;
+    //         let c3 = c2 === '16' ? c : c2;
+    //         let textureFile = LDR.TexmapPlacements[idx].file;
+
+    //         let material;
+    //         let buildMaterial, setMap;
+    //         if (loader.physicalRenderingAge === 0) {
+    //             let triangleColorManager = new LDR.ColorManager();
+    //             triangleColorManager.get(c2); // Ensure color is present.
+    //             buildMaterial = t => LDR.Colors.buildTriangleMaterial(triangleColorManager, c3, t);
+    //             setMap = t => material.uniforms.map = { type: 't', value: t };
+    //         }
+    //         else {
+    //             buildMaterial = t => LDR.Colors.buildStandardMaterial(c3, t);
+    //             setMap = t => material.map = t;
+    //         }
+
+    //         if (loader.texmaps[textureFile] === true) {
+    //             material = buildMaterial(true);
+    //             function setTexmap(t) {
+    //                 setMap(t);
+    //                 material.needsUpdate = true;
+    //                 loader.onProgress(textureFile);
+    //             }
+    //             loader.texmapListeners[textureFile].push(setTexmap);
+    //         }
+    //         else {
+    //             let texture = loader.texmaps[textureFile];
+    //             material = buildMaterial(texture);
+    //         }
+
+    //         let mesh = new Mesh(g.clone(), material);
+    //         mesh.geometry.applyMatrix4(m4);
+    //         mc.addMesh(c3, mesh, pd);
+    //     });
+    // }
+
+    let b = this.geometry.boundingBox;
+    mc.expandBoundingBox(b, m4);
+}

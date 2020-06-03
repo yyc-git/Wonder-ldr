@@ -108,3 +108,62 @@ LDRStep.prototype.cleanUp = function (loader, newSteps) {
         push(parts);
     }
 }
+
+
+
+// LDRStep.prototype.generateThreePart = function (loader, colorID, position, rotation, cull, invertCCW, mc, taskList) {
+LDRStep.prototype.generateThreePart = function (loader, colorID, position, rotation, mc) {
+    //console.log("STEP: Creating three part for " + this.subModels.length + " sub models in color " + colorID + ", cull: " + cull + ", invertion: " + invertCCW);
+    // let ownInversion = (rotation.determinant() < 0) !== invertCCW; // Adjust for inversed matrix!
+
+    function transformColor(subColorID) {
+        if (subColorID === 16) {
+            return colorID; // Main color
+        }
+        else if (subColorID === 24) {
+            return colorID < 0 ? colorID : -colorID - 1; // Edge color
+        }
+        return subColorID;
+    }
+
+    function transformPoint(p) {
+        let ret = adapter.Vector3.create(p.x, p.y, p.z);
+        ret = adapter.Vector3.applyMatrix3(rotation, ret);
+        ret = adapter.Vector3.add(position, ret);
+        return ret;
+    }
+
+    function handleSubModel(subModelDesc) {
+        // let subModelInversion = invertCCW !== subModelDesc.invertCCW;
+        // let subModelCull = subModelDesc.cull && cull; // Cull only if both sub model, this step and the inherited cull info is true!
+
+        let subModelColor = transformColor(subModelDesc.c);
+
+        let subModel = loader.getPartType(subModelDesc.ID);
+        if (!subModel) {
+            loader.onError({ message: "Unloaded sub model!", subModel: subModelDesc.ID });
+            return;
+        }
+        // if (subModel.replacement) {
+        //     let replacementSubModel = loader.getPartType(subModel.replacement);
+        //     if (!replacementSubModel) {
+        //         throw {
+        //             name: "UnloadedSubmodelException",
+        //             level: "Severe",
+        //             message: "Unloaded replaced sub model: " + subModel.replacement + " replacing " + subModelDesc.ID,
+        //             htmlMessage: "Unloaded replaced sub model: " + subModel.replacement + " replacing " + subModelDesc.ID,
+        //             toString: function () { return this.name + ": " + this.message; }
+        //         };
+        //     }
+        //     subModel = replacementSubModel;
+        // }
+        let nextPosition = transformPoint(subModelDesc.p);
+        let nextRotation = adapter.Matrix3.createEmpty();
+        nextRotation = adapter.Matrix3.multiplyMatrices(rotation, subModelDesc.r, nextRotation);
+        // subModel.generateThreePart(loader, subModelColor, nextPosition, nextRotation, subModelCull, subModelInversion, mc, subModelDesc, taskList);
+        subModel.generateThreePart(loader, subModelColor, nextPosition, nextRotation, mc, subModelDesc);
+    }
+
+    // Add submodels:
+    this.subModels.forEach(handleSubModel);
+}

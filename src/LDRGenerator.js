@@ -58,15 +58,15 @@ LDR.Generator.makeP = function (desc, name) {
 }
 
 LDR.Generator.makeR = function (a, b) {
-    let ret = new adapter.createMatrix3(a, 0, 0, 0, b, 0, 0, 0, a);
+    let ret = new adapter.Matrix3.create(a, 0, 0, 0, b, 0, 0, 0, a);
     return ret;
 }
 
 LDR.Generator.addLinesToStep = function (step, lines) {
     for (let i = 0; i < lines.length; i += 6) {
         step.addLine(24,
-            adapter.createVector3(lines[i], lines[i + 1], lines[i + 2]),
-            adapter.createVector3(lines[i + 3], lines[i + 4], lines[i + 5])
+            adapter.Vector3.create(lines[i], lines[i + 1], lines[i + 2]),
+            adapter.Vector3.create(lines[i + 3], lines[i + 4], lines[i + 5])
         );
     }
 }
@@ -74,10 +74,10 @@ LDR.Generator.addLinesToStep = function (step, lines) {
 LDR.Generator.addConditionalLinesToStep = function (step, lines) {
     for (let i = 0; i < lines.length; i += 12) {
         step.addConditionalLine(24,
-            adapter.createVector3(lines[i], lines[i + 1], lines[i + 2]),
-            adapter.createVector3(lines[i + 3], lines[i + 4], lines[i + 5]),
-            adapter.createVector3(lines[i + 6], lines[i + 7], lines[i + 8]),
-            adapter.createVector3(lines[i + 9], lines[i + 10], lines[i + 11])
+            adapter.Vector3.create(lines[i], lines[i + 1], lines[i + 2]),
+            adapter.Vector3.create(lines[i + 3], lines[i + 4], lines[i + 5]),
+            adapter.Vector3.create(lines[i + 6], lines[i + 7], lines[i + 8]),
+            adapter.Vector3.create(lines[i + 9], lines[i + 10], lines[i + 11])
         );
     }
 }
@@ -85,9 +85,9 @@ LDR.Generator.addConditionalLinesToStep = function (step, lines) {
 LDR.Generator.addTrianglesToStep = function (step, triangles, color = 16) {
     for (let i = 0; i < triangles.length; i += 9) {
         step.addTriangle(color,
-            adapter.createVector3(triangles[i], triangles[i + 1], triangles[i + 2]),
-            adapter.createVector3(triangles[i + 3], triangles[i + 4], triangles[i + 5]),
-            adapter.createVector3(triangles[i + 6], triangles[i + 7], triangles[i + 8])
+            adapter.Vector3.create(triangles[i], triangles[i + 1], triangles[i + 2]),
+            adapter.Vector3.create(triangles[i + 3], triangles[i + 4], triangles[i + 5]),
+            adapter.Vector3.create(triangles[i + 6], triangles[i + 7], triangles[i + 8])
         );
     }
 }
@@ -95,10 +95,10 @@ LDR.Generator.addTrianglesToStep = function (step, triangles, color = 16) {
 LDR.Generator.addQuadsToStep = function (step, quads, color = 16) {
     for (let i = 0; i < quads.length; i += 12) {
         step.addQuad(color,
-            adapter.createVector3(quads[i], quads[i + 1], quads[i + 2]),
-            adapter.createVector3(quads[i + 3], quads[i + 4], quads[i + 5]),
-            adapter.createVector3(quads[i + 6], quads[i + 7], quads[i + 8]),
-            adapter.createVector3(quads[i + 9], quads[i + 10], quads[i + 11])
+            adapter.Vector3.create(quads[i], quads[i + 1], quads[i + 2]),
+            adapter.Vector3.create(quads[i + 3], quads[i + 4], quads[i + 5]),
+            adapter.Vector3.create(quads[i + 6], quads[i + 7], quads[i + 8]),
+            adapter.Vector3.create(quads[i + 9], quads[i + 10], quads[i + 11])
         );
     }
 }
@@ -115,8 +115,8 @@ LDR.Generator.makeCylinderClosed = function (sections) {
     // let step = new THREE.LDRStep();
     let step = new LDRStep();
 
-    let p0 = adapter.createVector3();
-    let p1 = adapter.createVector3(0, 1, 0);
+    let p0 = adapter.Vector3.create();
+    let p1 = adapter.Vector3.create(0, 1, 0);
     let r = LDR.Generator.makeR(1, 1);
 
     // step.addSubModel(new LDRPartDescription(16, p0, r, sections + '-4edge.dat', true, false));
@@ -136,11 +136,11 @@ LDR.Generator.makeCircle4 = function (sections) {
     let pt = LDR.Generator.makeP('Circle ' + (sections * 0.25),
         sections + '-4edge.dat');
     let step = new LDRStep();
-    let prev = adapter.createVector3(1, 0, 0);
+    let prev = adapter.Vector3.create(1, 0, 0);
     for (let i = 1; i <= 4 * sections; i++) {
         let angle = i * Math.PI / 8;
         let c = Math.cos(angle), s = Math.sin(angle);
-        let p = adapter.createVector3(c, 0, s);
+        let p = adapter.Vector3.create(c, 0, s);
         step.addLine(24, prev, p);
         prev = p;
     }
@@ -157,11 +157,11 @@ LDR.Generator.makeCylinder = function (cond, sections) {
         sections + (cond ? '-4cyli.dat' : '-4cyli2.dat'));
     let step = new LDRStep();
 
-    let p0 = adapter.createVector3(1, 0, 0), p1 = adapter.createVector3(1, 1, 0);
+    let p0 = adapter.Vector3.create(1, 0, 0), p1 = adapter.Vector3.create(1, 1, 0);
     let angle = Math.PI / 8;
     let c = Math.cos(angle), s = Math.sin(angle);
-    let next0 = adapter.createVector3(c, 0, s);
-    let next1 = adapter.createVector3(c, 1, s);
+    let next0 = adapter.Vector3.create(c, 0, s);
+    let next1 = adapter.Vector3.create(c, 1, s);
 
     for (let i = 2; i < 4 * sections + 2; i++) {
         let prev0 = p0, prev1 = p1;
@@ -170,8 +170,8 @@ LDR.Generator.makeCylinder = function (cond, sections) {
         angle = i * Math.PI / 8;
         c = Math.cos(angle);
         s = Math.sin(angle);
-        next0 = adapter.createVector3(c, 0, s);
-        next1 = adapter.createVector3(c, 1, s);
+        next0 = adapter.Vector3.create(c, 0, s);
+        next1 = adapter.Vector3.create(c, 1, s);
 
         step.addQuad(16, prev1, p1, p0, prev0, true);
         if (cond) {
@@ -187,11 +187,11 @@ LDR.Generator.makeCylinderSloped = function (sections) {
     let pt = LDR.Generator.makeP(desc, sections + '-4cyls.dat');
     let step = new LDRStep();
 
-    let p0 = adapter.createVector3(1, 0, 0), p1 = adapter.createVector3(1, 0, 0);
+    let p0 = adapter.Vector3.create(1, 0, 0), p1 = adapter.Vector3.create(1, 0, 0);
     let angle = Math.PI / 8;
     let c = Math.cos(angle), s = Math.sin(angle);
-    let next0 = adapter.createVector3(c, 0, s);
-    let next1 = adapter.createVector3(c, 1 - c, s);
+    let next0 = adapter.Vector3.create(c, 0, s);
+    let next1 = adapter.Vector3.create(c, 1 - c, s);
 
     for (let i = 2; i < 4 * sections + 2; i++) {
         let prev0 = p0, prev1 = p1;
@@ -200,8 +200,8 @@ LDR.Generator.makeCylinderSloped = function (sections) {
         angle = i * Math.PI / 8;
         c = Math.cos(angle);
         s = Math.sin(angle);
-        next0 = adapter.createVector3(c, 0, s);
-        next1 = adapter.createVector3(c, 1 - c, s);
+        next0 = adapter.Vector3.create(c, 0, s);
+        next1 = adapter.Vector3.create(c, 1 - c, s);
 
         if (i === 2) {
             step.addTriangle(16, prev1, p1, p0, true);
@@ -222,12 +222,12 @@ LDR.Generator.makeDisc = function (sections) {
     let pt = LDR.Generator.makeP('Disc ' + (sections * 0.25),
         sections + '-4disc.dat');
     let step = new LDRStep();
-    let zero = adapter.createVector3(0, 0, 0);
-    let prev = adapter.createVector3(1, 0, 0);
+    let zero = adapter.Vector3.create(0, 0, 0);
+    let prev = adapter.Vector3.create(1, 0, 0);
     for (let i = 1; i <= 4 * sections; i++) {
         let angle = i * Math.PI / 8;
         let c = Math.cos(angle), s = Math.sin(angle);
-        let p = adapter.createVector3(c, 0, s);
+        let p = adapter.Vector3.create(c, 0, s);
         step.addTriangle(16, zero, prev, p, true);
         prev = p;
     }
@@ -240,13 +240,13 @@ LDR.Generator.makeRing = function (sections, size) {
         sections + '-4ring' + size + '.dat');
     let step = new LDRStep();
     let SIZE = size + 1;
-    let prev1 = adapter.createVector3(size, 0, 0);
-    let prev2 = adapter.createVector3(SIZE, 0, 0);
+    let prev1 = adapter.Vector3.create(size, 0, 0);
+    let prev2 = adapter.Vector3.create(SIZE, 0, 0);
     for (let i = 1; i <= 4 * sections; i++) {
         let angle = i * Math.PI / 8;
         let c = Math.cos(angle), s = Math.sin(angle);
-        let p1 = adapter.createVector3(SIZE * c, 0, SIZE * s);
-        let p2 = adapter.createVector3(size * c, 0, size * s);
+        let p1 = adapter.Vector3.create(SIZE * c, 0, SIZE * s);
+        let p2 = adapter.Vector3.create(size * c, 0, size * s);
         step.addQuad(16, p1, p2, prev1, prev2, true);
         prev1 = p2;
         prev2 = p1;

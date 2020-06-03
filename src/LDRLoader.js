@@ -417,8 +417,8 @@ LDRLoader.prototype.parse = function (data, defaultID) {
                 for (let j = 2; j < 14; j++) {
                     parts[j] = parseFloat(parts[j]);
                 }
-                let position = adapter.createVector3(parts[2], parts[3], parts[4]);
-                let rotation = adapter.createMatrix3(parts[5], parts[6], parts[7],
+                let position = adapter.Vector3.create(parts[2], parts[3], parts[4]);
+                let rotation = adapter.Matrix3.create(parts[5], parts[6], parts[7],
                     parts[8], parts[9], parts[10],
                     parts[11], parts[12], parts[13]);
                 let subModelID = parts.slice(14).join(" ").toLowerCase().replace('\\', '/');
@@ -432,8 +432,8 @@ LDRLoader.prototype.parse = function (data, defaultID) {
                 // invertNext = false;
                 break;
             case 2: // Line "2 <colour> x1 y1 z1 x2 y2 z2"
-                p1 = adapter.createVector3(parseFloat(parts[2]), parseFloat(parts[3]), parseFloat(parts[4]));
-                p2 = adapter.createVector3(parseFloat(parts[5]), parseFloat(parts[6]), parseFloat(parts[7]));
+                p1 = adapter.Vector3.create(parseFloat(parts[2]), parseFloat(parts[3]), parseFloat(parts[4]));
+                p2 = adapter.Vector3.create(parseFloat(parts[5]), parseFloat(parts[6]), parseFloat(parts[7]));
 
                 // (inTexmapFallback ? texmapPlacement.fallback : step).addLine(colorID, p1, p2, texmapPlacement);
                 step.addLine(colorID, p1, p2);
@@ -442,9 +442,9 @@ LDRLoader.prototype.parse = function (data, defaultID) {
                 invertNext = false;
                 break;
             case 3: // 3 <colour> x1 y1 z1 x2 y2 z2 x3 y3 z3 [u1 v1 u2 v2 u3 v3]
-                p1 = adapter.createVector3(parseFloat(parts[2]), parseFloat(parts[3]), parseFloat(parts[4]));
-                p2 = adapter.createVector3(parseFloat(parts[5]), parseFloat(parts[6]), parseFloat(parts[7]));
-                p3 = adapter.createVector3(parseFloat(parts[8]), parseFloat(parts[9]), parseFloat(parts[10]));
+                p1 = adapter.Vector3.create(parseFloat(parts[2]), parseFloat(parts[3]), parseFloat(parts[4]));
+                p2 = adapter.Vector3.create(parseFloat(parts[5]), parseFloat(parts[6]), parseFloat(parts[7]));
+                p3 = adapter.Vector3.create(parseFloat(parts[8]), parseFloat(parts[9]), parseFloat(parts[10]));
                 // if (LDR.STUDIO && parts.length === 17) { // Parse texmap UV's
                 //     localCull = false; // Double-side the texmaps on the triangles.
                 //     texmapPlacement = LDR.STUDIO.handleTriangleLine(part, parts);
@@ -457,10 +457,10 @@ LDRLoader.prototype.parse = function (data, defaultID) {
                 // invertNext = false;
                 break;
             case 4: // 4 <colour> x1 y1 z1 x2 y2 z2 x3 y3 z3 x4 y4 z4
-                p1 = adapter.createVector3(parseFloat(parts[2]), parseFloat(parts[3]), parseFloat(parts[4]));
-                p2 = adapter.createVector3(parseFloat(parts[5]), parseFloat(parts[6]), parseFloat(parts[7]));
-                p3 = adapter.createVector3(parseFloat(parts[8]), parseFloat(parts[9]), parseFloat(parts[10]));
-                p4 = adapter.createVector3(parseFloat(parts[11]), parseFloat(parts[12]), parseFloat(parts[13]));
+                p1 = adapter.Vector3.create(parseFloat(parts[2]), parseFloat(parts[3]), parseFloat(parts[4]));
+                p2 = adapter.Vector3.create(parseFloat(parts[5]), parseFloat(parts[6]), parseFloat(parts[7]));
+                p3 = adapter.Vector3.create(parseFloat(parts[8]), parseFloat(parts[9]), parseFloat(parts[10]));
+                p4 = adapter.Vector3.create(parseFloat(parts[11]), parseFloat(parts[12]), parseFloat(parts[13]));
                 // if (!part.certifiedBFC || !localCull) {
                 //     step.cull = false; // Ensure no culling when step is handled.
                 // }
@@ -472,10 +472,10 @@ LDRLoader.prototype.parse = function (data, defaultID) {
                 // invertNext = false;
                 break;
             case 5: // Conditional lines:
-                p1 = adapter.createVector3(parseFloat(parts[2]), parseFloat(parts[3]), parseFloat(parts[4]));
-                p2 = adapter.createVector3(parseFloat(parts[5]), parseFloat(parts[6]), parseFloat(parts[7]));
-                p3 = adapter.createVector3(parseFloat(parts[8]), parseFloat(parts[9]), parseFloat(parts[10]));
-                p4 = adapter.createVector3(parseFloat(parts[11]), parseFloat(parts[12]), parseFloat(parts[13]));
+                p1 = adapter.Vector3.create(parseFloat(parts[2]), parseFloat(parts[3]), parseFloat(parts[4]));
+                p2 = adapter.Vector3.create(parseFloat(parts[5]), parseFloat(parts[6]), parseFloat(parts[7]));
+                p3 = adapter.Vector3.create(parseFloat(parts[8]), parseFloat(parts[9]), parseFloat(parts[10]));
+                p4 = adapter.Vector3.create(parseFloat(parts[11]), parseFloat(parts[12]), parseFloat(parts[13]));
 
                 // (inTexmapFallback ? texmapPlacement.fallback : step).addConditionalLine(colorID, p1, p2, p3, p4, texmapPlacement);
                 step.addConditionalLine(colorID, p1, p2, p3, p4);
@@ -761,3 +761,35 @@ LDRLoader.prototype.load = function (id) {
         );
 
 };
+
+
+LDRLoader.prototype.getMainModel = function () {
+    if (!this.mainModel) {
+        throw 'No main model set for ldrLoader!';
+    }
+    if (!this.partTypes.hasOwnProperty(this.mainModel)) {
+        throw 'Inconsistent internal storage for ldrLoader: No main model!';
+    }
+    let pt = this.partTypes[this.mainModel];
+    if (pt === true) {
+        throw 'Main model not yet loaded!';
+    }
+    return pt;
+}
+
+LDRLoader.prototype.generate = function (colorID, mc, taskList) {
+    // this.loadTexmaps();
+
+    let mainModel = this.getMainModel();
+
+    // Place model in scene:
+    let origo = adapter.Vector3.create(0.0, 0.0, 0.0);
+    let inv = adapter.Matrix3.create(1, 0, 0, 0, -1, 0, 0, 0, -1);// Invert Y, and Z-axis for LDraw
+
+    // // Generate the meshes:
+    // if (this.cleanUpPrimitivesAndSubParts) {
+    //     mainModel.setReferencedFrom(this);
+    // }
+    // mainModel.generateThreePart(this, colorID, origo, inv, true, false, mc, null, taskList);
+    mainModel.generateThreePart(this, colorID, origo, inv, mc, null);
+}
