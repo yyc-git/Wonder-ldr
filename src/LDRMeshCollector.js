@@ -1,4 +1,5 @@
-window.LDR = window.LDR || {};
+import {adapter} from "./adapter/Adapter"
+import {isTrans} from "./LDRColorMaterials"
 
 /*
   MeshCollector holds references to meshes (and similar Three.js structures for lines).
@@ -8,8 +9,8 @@ window.LDR = window.LDR || {};
   - 'old': A part placed in 'earlier steps' can be colored 'old' to highlight new parts
   - 'ghost': 'Ghosted' parts will be shown by their lines only (no faces).
 */
-LDR.MeshCollectorIdx = 0;
-LDR.MeshCollector = function (opaqueObject, sixteenObject, transObject, outliner) {
+export let MeshCollectorIdx = 0;
+export let LDRMeshCollector = function (opaqueObject, sixteenObject, transObject, outliner) {
     this.opaqueObject = opaqueObject;
     this.sixteenObject = sixteenObject; // To be painted after anything opaque, as it might be trans.
     this.transObject = transObject; // To be painted last.
@@ -22,20 +23,20 @@ LDR.MeshCollector = function (opaqueObject, sixteenObject, transObject, outliner
     this.visible = true;
     this.boundingBox;
     this.isMeshCollector = true;
-    this.idx = LDR.MeshCollectorIdx++;
+    this.idx = MeshCollectorIdx++;
 }
 
-LDR.MeshCollector.prototype.addLines = function (mesh, part, conditional) {
+LDRMeshCollector.prototype.addLines = function (mesh, part, conditional) {
     this.lineMeshes.push({ mesh: mesh, part: part, conditional: conditional });
     this.opaqueObject.add(mesh);
 }
 
-LDR.MeshCollector.prototype.addMesh = function (color, mesh, part) {
+LDRMeshCollector.prototype.addMesh = function (color, mesh, part) {
     let parent;
     if (color === 16) {
         parent = this.sixteenObject;
     }
-    else if (LDR.Colors.isTrans(color)) {
+    else if (isTrans(color)) {
         parent = this.transObject;
     }
     else {
@@ -45,7 +46,7 @@ LDR.MeshCollector.prototype.addMesh = function (color, mesh, part) {
     parent.add(mesh);
 }
 
-LDR.MeshCollector.prototype.removeAllMeshes = function () {
+LDRMeshCollector.prototype.removeAllMeshes = function () {
     let self = this;
     this.lineMeshes.forEach(obj => self.opaqueObject.remove(obj.mesh));
     this.triangleMeshes.forEach(obj => obj.parent.remove(obj.mesh));
@@ -55,7 +56,7 @@ LDR.MeshCollector.prototype.removeAllMeshes = function () {
 //   Sets '.visible' on all meshes according to LDR.Options and 
 //   visibility of this meshCollector.
 //  */
-// LDR.MeshCollector.prototype.updateMeshVisibility = function () {
+// LDRMeshCollector.prototype.updateMeshVisibility = function () {
 //     let v = this.visible;
 //     let lineV = v && LDR.Options && LDR.Options.lineContrast !== 2;
 
@@ -67,7 +68,7 @@ LDR.MeshCollector.prototype.removeAllMeshes = function () {
 
 
 
-LDR.MeshCollector.prototype.expandBoundingBox = function (boundingBox, m) {
+LDRMeshCollector.prototype.expandBoundingBox = function (boundingBox, m) {
     let b = adapter.BoundingBox3.create();
     b = adapter.BoundingBox3.copy(boundingBox, b);
     b = adapter.BoundingBox3.applyMatrix4(m, b);

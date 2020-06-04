@@ -3,7 +3,7 @@
   given color (16/24 allowed) and invertCCW to allow for sub-parts in DAT-parts.
 */
 // let LDRPartDescription = function (colorID, position, rotation, ID, cull, invertCCW, texmapPlacement) {
-let LDRPartDescription = function (colorID, position, rotation, ID) {
+export let LDRPartDescription = function (colorID, position, rotation, ID) {
     this.c = colorID; // LDraw ID. Negative values indicate edge colors - see top description.
     this.p = position; // Vector3
     this.r = rotation; // Matrix3

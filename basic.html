@@ -10,33 +10,17 @@
 <body>
 
     <!-- minified -->
-    <script src="js/most.min.js"></script>
+    <script src="src/lib/most.min.js"></script>
 
     <script src="js/three.js"></script>
     <script src="js/OrbitControls.js"></script>
-    <script src="src/LDRLoader.js"></script>
-    <script src="src/LDRGenerator.js"></script>
-    <script src="src/LDRPartType.js"></script>
-    <script src="src/LDRPartDescription.js"></script>
-    <script src="src/LDRStep.js"></script>
-    <script src="src/LDRStructure.js"></script>
-    <script src="src/LDRColorManager.js"></script>
-    <script src="src/colors.js"></script>
-    <script src="src/LDRGeometries.js"></script>
-    <script src="src/LDRShaders.js"></script>
-    <script src="src/LDRMeshCollector.js"></script>
-    <script src="src/LDRColorMaterials.js"></script>
+    <script src="js/adapter/three/ThreeAdapter.js"></script>
 
-
-
-
-    <script src="src/adapter/Adapter.js"></script>
-
-    <script src="src/adapter/three/ThreeAdapter.js"></script>
+    <script src="dist/ldr.js"></script>
 
     <script>
 
-        setAdapter(THREEAdapter, {});
+        ldr.Adapter.setAdapter(THREEAdapter);
 
 
         let startTime = new Date();
@@ -61,7 +45,7 @@
         baseObject.add(sixteenObject);
         baseObject.add(transObject);
         scene.add(baseObject);
-        let mc = new LDR.MeshCollector(opaqueObject, sixteenObject, transObject);
+        let mc = new ldr.LDRMeshCollector(opaqueObject, sixteenObject, transObject);
 
         // Set up renderer:
         let renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -89,8 +73,7 @@
         // Three.js loader for LDraw models:
         let ldrLoader;
 
-        // ldrLoader = new LDRLoader(onLoad, null, { cleanUpPrimitivesAndSubParts: true });
-        ldrLoader = new LDRLoader({});
+        ldrLoader = new ldr.LDRLoader({});
         ldrLoader.load(model)
             .subscribe({
                 next: (data) => {

@@ -1,48 +1,21 @@
 'use strict';
 
-window.LDR = window.LDR || {};
+import { adapter } from "./adapter/Adapter"
+import { LDRStep } from "./LDRStep"
+import { LDRPartType } from "./LDRPartType"
 
-LDR.Generator = {}; // Generator namespace
 
-LDR.Generator.map = {
-    '1-4edge.dat': () => LDR.Generator.makeCircle4(1),
-    '2-4edge.dat': () => LDR.Generator.makeCircle4(2),
-    '4-4edge.dat': () => LDR.Generator.makeCircle4(4),
-    '1-4cyli.dat': () => LDR.Generator.makeCylinder(true, 1),
-    '1-4cyli2.dat': () => LDR.Generator.makeCylinder(false, 1),
-    '2-4cyli.dat': () => LDR.Generator.makeCylinder(true, 2),
-    '2-4cyli2.dat': () => LDR.Generator.makeCylinder(false, 2),
-    '4-4cyli.dat': () => LDR.Generator.makeCylinder(true, 4),
-    '4-4cyli2.dat': () => LDR.Generator.makeCylinder(false, 4),
-    '1-4cylc.dat': () => LDR.Generator.makeCylinderClosed(1),
-    '2-4cylc.dat': () => LDR.Generator.makeCylinderClosed(2),
-    '4-4cylc.dat': () => LDR.Generator.makeCylinderClosed(4),
-    '1-4cyls.dat': () => LDR.Generator.makeCylinderSloped(1),
-    '2-4cyls.dat': () => LDR.Generator.makeCylinderSloped(2),
-    '4-4cyls.dat': () => LDR.Generator.makeCylinderSloped(4),
-    '1-4disc.dat': () => LDR.Generator.makeDisc(1),
-    '2-4disc.dat': () => LDR.Generator.makeDisc(2),
-    //'3-4disc.dat': () => LDR.Generator.makeDisc(3), // TODO Check that this is correct!
-    '4-4disc.dat': () => LDR.Generator.makeDisc(4),
-    '2-4ring1.dat': () => LDR.Generator.makeRing(2, 1),
-    '4-4ring2.dat': () => LDR.Generator.makeRing(4, 2),
-    '4-4ring3.dat': () => LDR.Generator.makeRing(4, 3),
-    '4-4ring5.dat': () => LDR.Generator.makeRing(4, 5),
-    '4-4ring6.dat': () => LDR.Generator.makeRing(4, 6),
-    // 'logo.dat': () => LDR.Generator.makeLogo1(),
-    // 'empty.dat': () => LDR.Generator.makeEmpty()
-};
 
-LDR.Generator.make = function (id) {
-    if (LDR.Generator.map.hasOwnProperty(id)) {
-        return LDR.Generator.map[id]();
+export let make = function (id) {
+    if (map.hasOwnProperty(id)) {
+        return map[id]();
     }
     else {
         return null;
     }
 }
 
-LDR.Generator.makeP = function (desc, name) {
+export let makeP = function (desc, name) {
     let pt = new LDRPartType();
 
     pt.name = pt.ID = name;
@@ -57,12 +30,12 @@ LDR.Generator.makeP = function (desc, name) {
     return pt;
 }
 
-LDR.Generator.makeR = function (a, b) {
+export let makeR = function (a, b) {
     let ret = new adapter.Matrix3.create(a, 0, 0, 0, b, 0, 0, 0, a);
     return ret;
 }
 
-LDR.Generator.addLinesToStep = function (step, lines) {
+export let addLinesToStep = function (step, lines) {
     for (let i = 0; i < lines.length; i += 6) {
         step.addLine(24,
             adapter.Vector3.create(lines[i], lines[i + 1], lines[i + 2]),
@@ -71,7 +44,7 @@ LDR.Generator.addLinesToStep = function (step, lines) {
     }
 }
 
-LDR.Generator.addConditionalLinesToStep = function (step, lines) {
+export let addConditionalLinesToStep = function (step, lines) {
     for (let i = 0; i < lines.length; i += 12) {
         step.addConditionalLine(24,
             adapter.Vector3.create(lines[i], lines[i + 1], lines[i + 2]),
@@ -82,7 +55,7 @@ LDR.Generator.addConditionalLinesToStep = function (step, lines) {
     }
 }
 
-LDR.Generator.addTrianglesToStep = function (step, triangles, color = 16) {
+export let addTrianglesToStep = function (step, triangles, color = 16) {
     for (let i = 0; i < triangles.length; i += 9) {
         step.addTriangle(color,
             adapter.Vector3.create(triangles[i], triangles[i + 1], triangles[i + 2]),
@@ -92,7 +65,7 @@ LDR.Generator.addTrianglesToStep = function (step, triangles, color = 16) {
     }
 }
 
-LDR.Generator.addQuadsToStep = function (step, quads, color = 16) {
+export let addQuadsToStep = function (step, quads, color = 16) {
     for (let i = 0; i < quads.length; i += 12) {
         step.addQuad(color,
             adapter.Vector3.create(quads[i], quads[i + 1], quads[i + 2]),
@@ -103,21 +76,21 @@ LDR.Generator.addQuadsToStep = function (step, quads, color = 16) {
     }
 }
 
-// LDR.Generator.makeEmpty = function(id = 'empty.dat') {
-//     let pt = LDR.Generator.makeP(id, id);
+// export let makeEmpty = function(id = 'empty.dat') {
+//     let pt = makeP(id, id);
 //     pt.steps.push(new THREE.LDRStep());
 //     return pt;
 // }
 
-LDR.Generator.makeCylinderClosed = function (sections) {
-    let pt = LDR.Generator.makeP('Cylinder Closed ' + (sections * 0.25),
+export let makeCylinderClosed = function (sections) {
+    let pt = makeP('Cylinder Closed ' + (sections * 0.25),
         sections + '-4cylc.dat');
     // let step = new THREE.LDRStep();
     let step = new LDRStep();
 
     let p0 = adapter.Vector3.create();
     let p1 = adapter.Vector3.create(0, 1, 0);
-    let r = LDR.Generator.makeR(1, 1);
+    let r = makeR(1, 1);
 
     // step.addSubModel(new LDRPartDescription(16, p0, r, sections + '-4edge.dat', true, false));
     // step.addSubModel(new LDRPartDescription(16, p1, r, sections + '-4edge.dat', true, false));
@@ -132,8 +105,8 @@ LDR.Generator.makeCylinderClosed = function (sections) {
     return pt;
 }
 
-LDR.Generator.makeCircle4 = function (sections) {
-    let pt = LDR.Generator.makeP('Circle ' + (sections * 0.25),
+export let makeCircle4 = function (sections) {
+    let pt = makeP('Circle ' + (sections * 0.25),
         sections + '-4edge.dat');
     let step = new LDRStep();
     let prev = adapter.Vector3.create(1, 0, 0);
@@ -148,12 +121,12 @@ LDR.Generator.makeCircle4 = function (sections) {
     return pt;
 }
 
-LDR.Generator.makeCylinder = function (cond, sections) {
+export let makeCylinder = function (cond, sections) {
     let desc = 'Cylinder ' + (sections * 0.25);
     if (!cond) {
         desc += ' without Conditional Lines';
     }
-    let pt = LDR.Generator.makeP(desc,
+    let pt = makeP(desc,
         sections + (cond ? '-4cyli.dat' : '-4cyli2.dat'));
     let step = new LDRStep();
 
@@ -182,9 +155,9 @@ LDR.Generator.makeCylinder = function (cond, sections) {
     return pt;
 }
 
-LDR.Generator.makeCylinderSloped = function (sections) {
+export let makeCylinderSloped = function (sections) {
     let desc = 'Cylinder Sloped ' + (sections * 0.25);
-    let pt = LDR.Generator.makeP(desc, sections + '-4cyls.dat');
+    let pt = makeP(desc, sections + '-4cyls.dat');
     let step = new LDRStep();
 
     let p0 = adapter.Vector3.create(1, 0, 0), p1 = adapter.Vector3.create(1, 0, 0);
@@ -218,8 +191,8 @@ LDR.Generator.makeCylinderSloped = function (sections) {
     return pt;
 }
 
-LDR.Generator.makeDisc = function (sections) {
-    let pt = LDR.Generator.makeP('Disc ' + (sections * 0.25),
+export let makeDisc = function (sections) {
+    let pt = makeP('Disc ' + (sections * 0.25),
         sections + '-4disc.dat');
     let step = new LDRStep();
     let zero = adapter.Vector3.create(0, 0, 0);
@@ -235,8 +208,8 @@ LDR.Generator.makeDisc = function (sections) {
     return pt;
 }
 
-LDR.Generator.makeRing = function (sections, size) {
-    let pt = LDR.Generator.makeP('Ring ' + size + ' x ' + (0.25 * sections),
+export let makeRing = function (sections, size) {
+    let pt = makeP('Ring ' + size + ' x ' + (0.25 * sections),
         sections + '-4ring' + size + '.dat');
     let step = new LDRStep();
     let SIZE = size + 1;
@@ -255,22 +228,22 @@ LDR.Generator.makeRing = function (sections, size) {
     return pt;
 }
 
-// Content below copied from logo.dat by Paul Easter [pneaster]
-LDR.Generator.logoPositions = [[-2, -4, 2, -5, 2, -3.5] // L
-    ,
-[-2, 0, -2, -2, 2, -3, 2, -1], [0, -1, 0, -2.5], // E (Divided due to middle line)
-    ,
-[-1.5, 2.25, -2, 2, -2, 1, -1.5, 0.5, 1.5, -0.25, 2, 0, 2, 1, 1.5, 1.5, 0, 2, 0, 1] //G
-    ,
-[-1.5, 4.75, -2, 4.5, -2, 3.5, -1.5, 3, 1.5, 2.25, 2, 2.5, 2, 3.5, 1.5, 4, -1.5, 4.75] // O
-];
+//// Content below copied from logo.dat by Paul Easter [pneaster]
+// logoPositions = [[-2, -4, 2, -5, 2, -3.5] // L
+//     ,
+// [-2, 0, -2, -2, 2, -3, 2, -1], [0, -1, 0, -2.5], // E (Divided due to middle line)
+//     ,
+// [-1.5, 2.25, -2, 2, -2, 1, -1.5, 0.5, 1.5, -0.25, 2, 0, 2, 1, 1.5, 1.5, 0, 2, 0, 1] //G
+//     ,
+// [-1.5, 4.75, -2, 4.5, -2, 3.5, -1.5, 3, 1.5, 2.25, 2, 2.5, 2, 3.5, 1.5, 4, -1.5, 4.75] // O
+// ];
 
-// LDR.Generator.makeLogo1 = function() {
-//     let pt = LDR.Generator.makeP('LEGO Logo for Studs - Non-3D Thin Lines', 'logo.dat');
+// makeLogo1 = function() {
+//     let pt = makeP('LEGO Logo for Studs - Non-3D Thin Lines', 'logo.dat');
 //     pt.ldraw_org = 'Unofficial_Primitive';
 //     let step = new THREE.LDRStep();
 
-//     LDR.Generator.logoPositions.forEach(letter => {
+//     logoPositions.forEach(letter => {
 // 	for(let i = 2; i < letter.length; i+=2) {
 //             let p1 = new THREE.Vector3(letter[i-2], 0, letter[i-1]);
 //             let p2 = new THREE.Vector3(letter[i], 0, letter[i+1]);
@@ -281,3 +254,34 @@ LDR.Generator.logoPositions = [[-2, -4, 2, -5, 2, -3.5] // L
 //     pt.steps.push(step); // No need to user 'addStep()' for primitives.
 //     return pt;
 // }
+
+
+
+export let map = {
+    '1-4edge.dat': () => makeCircle4(1),
+    '2-4edge.dat': () => makeCircle4(2),
+    '4-4edge.dat': () => makeCircle4(4),
+    '1-4cyli.dat': () => makeCylinder(true, 1),
+    '1-4cyli2.dat': () => makeCylinder(false, 1),
+    '2-4cyli.dat': () => makeCylinder(true, 2),
+    '2-4cyli2.dat': () => makeCylinder(false, 2),
+    '4-4cyli.dat': () => makeCylinder(true, 4),
+    '4-4cyli2.dat': () => makeCylinder(false, 4),
+    '1-4cylc.dat': () => makeCylinderClosed(1),
+    '2-4cylc.dat': () => makeCylinderClosed(2),
+    '4-4cylc.dat': () => makeCylinderClosed(4),
+    '1-4cyls.dat': () => makeCylinderSloped(1),
+    '2-4cyls.dat': () => makeCylinderSloped(2),
+    '4-4cyls.dat': () => makeCylinderSloped(4),
+    '1-4disc.dat': () => makeDisc(1),
+    '2-4disc.dat': () => makeDisc(2),
+    //'3-4disc.dat': () => makeDisc(3), // TODO Check that this is correct!
+    '4-4disc.dat': () => makeDisc(4),
+    '2-4ring1.dat': () => makeRing(2, 1),
+    '4-4ring2.dat': () => makeRing(4, 2),
+    '4-4ring3.dat': () => makeRing(4, 3),
+    '4-4ring5.dat': () => makeRing(4, 5),
+    '4-4ring6.dat': () => makeRing(4, 6),
+    // 'logo.dat': () => makeLogo1(),
+    // 'empty.dat': () => makeEmpty()
+};

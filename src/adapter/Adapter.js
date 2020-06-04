@@ -1,6 +1,6 @@
-let adapter = {
+export let adapter = {
 };
 
-let setAdapter = (adapter_) => {
+export let setAdapter = (adapter_) => {
     adapter = adapter_;
 }

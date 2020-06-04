@@ -1,17 +1,24 @@
-// import { fromPromise, from, empty } from "most";
-let fromPromise = most.fromPromise;
+import { fromPromise, from, empty, just, mergeArray } from "./lib/most.min.js";
 
-let from = most.from;
+import {adapter} from "./adapter/Adapter"
+import {LDRPartType} from "./LDRPartType"
+import {LDRPartDescription} from "./LDRPartDescription"
+import {LDRStep} from "./LDRStep"
+import {make} from "./LDRGenerator"
 
-let empty = most.empty;
+// let fromPromise = most.fromPromise;
 
-let just = most.just;
+// let from = most.from;
 
-let mergeArray = most.mergeArray;
+// let empty = most.empty;
+
+// let just = most.just;
+
+// let mergeArray = most.mergeArray;
 
 
 // let LDRLoader = function (onLoad, storage, options) {
-let LDRLoader = function (options) {
+export let LDRLoader = function (options) {
     let self = this;
 
     this.partTypes = {}; // id => true or part. id is typically something like "parts/3001.dat", and "model.mpd".
@@ -153,10 +160,10 @@ LDRLoader.prototype.parse = function (data, defaultID) {
             // if (colorID.length === 9 && colorID.substring(0, 3) === '0x2') {
             //     // Direct color: https://www.ldraw.org/article/218.html
             //     let hexValue = parseInt(colorID.substring(3), 16);
-            //     LDR.Colors[hexValue] = { name: 'Direct color 0x2' + colorID, value: hexValue, edge: hexValue, direct: colorID };
+            //     LDRColors[hexValue] = { name: 'Direct color 0x2' + colorID, value: hexValue, edge: hexValue, direct: colorID };
             //     colorID = hexValue;
             // }
-            // else if (LDR.Colors[colorID] === undefined) {
+            // else if (LDRColors[colorID] === undefined) {
             //     // This color might be on the form "0x2995220", such as seen in 3626bps5.dat:
 
             //     this.onWarning({ message: 'Unknown color "' + colorID + '". Black (0) will be shown instead.', line: i, subModel: part.ID });
@@ -193,7 +200,7 @@ LDRLoader.prototype.parse = function (data, defaultID) {
 
                 function handleFileLine(originalFileName) {
                     let fileName = originalFileName.toLowerCase().replace('\\', '/'); // Normalize the name by bringing to lower case and replacing backslashes:
-                    localCull = true;
+                    // localCull = true;
                     // saveThisCommentLine = false;
                     let isEmpty = part.steps.length === 0 && step.isEmpty();
 
@@ -439,7 +446,7 @@ LDRLoader.prototype.parse = function (data, defaultID) {
                 step.addLine(colorID, p1, p2);
 
                 inHeader = false;
-                invertNext = false;
+                // invertNext = false;
                 break;
             case 3: // 3 <colour> x1 y1 z1 x2 y2 z2 x3 y3 z3 [u1 v1 u2 v2 u3 v3]
                 p1 = adapter.Vector3.create(parseFloat(parts[2]), parseFloat(parts[3]), parseFloat(parts[4]));
@@ -599,7 +606,8 @@ LDRLoader.prototype.onPartsLoaded = function (id, loadedParts) {
 LDRLoader.prototype.getPartType = function (id) {
     if (!this.partTypes.hasOwnProperty(id)) {
         let pt;
-        if (LDR.Generator && (pt = LDR.Generator.make(id))) {
+        // if (LDR.Generator && (pt = LDR.Generator.make(id))) {
+        if (pt = make(id)) {
             return this.partTypes[id] = pt;
         }
         return null;
@@ -712,21 +720,21 @@ LDRLoader.prototype.loadMultiple = function (id, ids) {
     let toBeFetched = ids;
 
 
-    if (!LDR.Generator) {
-        // _load = (url, defaultID)
-        // return from(
-        //     toBeFetched.map(this.load)
-        // );
+    // if (!LDR.Generator) {
+    //     // _load = (url, defaultID)
+    //     // return from(
+    //     //     toBeFetched.map(this.load)
+    //     // );
 
-        // return toBeFetched.map(this.load)
-        // TODO fix
-        return _loadMultiple(id, toBeFetched, this);
-        // onDone(toBeFetched); // Can't do anything, so just pass on the list of parts to be fetched.
-    }
+    //     // return toBeFetched.map(this.load)
+    //     // TODO fix
+    //     return _loadMultiple(id, toBeFetched, this);
+    //     // onDone(toBeFetched); // Can't do anything, so just pass on the list of parts to be fetched.
+    // }
     // Try to fetch those that can be generated:
     let stillToBeFetched = [];
     toBeFetched.forEach(id => {
-        let pt = LDR.Generator.make(id)
+        let pt = make(id)
         if (pt) {
             self.setPartType(pt);
         }

@@ -1,6 +1,9 @@
-let LDRStepIdx = 0;
+import { Line2, Line3, Line4, Line5 } from "./LDRStructure"
+import { adapter } from "./adapter/Adapter"
 
-let LDRStep = function () {
+// let LDRStepIdx = 0;
+
+export let LDRStep = function () {
     // this.idx = LDRStepIdx++;
     this.hasPrimitives = false;
     this.subModels = []; // LDRPartDescription
@@ -26,7 +29,7 @@ LDRStep.prototype.addSubModel = function (subModel) {
 LDRStep.prototype.addLine = function (c, p1, p2) {
     this.hasPrimitives = true;
     // this.lines.push(new LDR.Line2(c, p1, p2, texmapPlacement));
-    this.lines.push(new LDR.Line2(c, p1, p2));
+    this.lines.push(new Line2(c, p1, p2));
     // texmapPlacement && texmapPlacement.use();
 }
 
@@ -34,7 +37,7 @@ LDRStep.prototype.addLine = function (c, p1, p2) {
 LDRStep.prototype.addTriangle = function (c, p1, p2, p3) {
     this.hasPrimitives = true;
     // this.triangles.push(new LDR.Line3(c, p1, p2, p3, cull, invert, texmapPlacement));
-    this.triangles.push(new LDR.Line3(c, p1, p2, p3));
+    this.triangles.push(new Line3(c, p1, p2, p3));
     // texmapPlacement && texmapPlacement.use();
 }
 
@@ -42,7 +45,7 @@ LDRStep.prototype.addTriangle = function (c, p1, p2, p3) {
 LDRStep.prototype.addQuad = function (c, p1, p2, p3, p4) {
     this.hasPrimitives = true;
     // this.quads.push(new LDR.Line4(c, p1, p2, p3, p4, cull, invert, texmapPlacement));
-    this.quads.push(new LDR.Line4(c, p1, p2, p3, p4));
+    this.quads.push(new Line4(c, p1, p2, p3, p4));
     // texmapPlacement && texmapPlacement.use();
 }
 
@@ -50,7 +53,7 @@ LDRStep.prototype.addQuad = function (c, p1, p2, p3, p4) {
 LDRStep.prototype.addConditionalLine = function (c, p1, p2, p3, p4) {
     this.hasPrimitives = true;
     // this.conditionalLines.push(new LDR.Line5(c, p1, p2, p3, p4, texmapPlacement));
-    this.conditionalLines.push(new LDR.Line5(c, p1, p2, p3, p4));
+    this.conditionalLines.push(new Line5(c, p1, p2, p3, p4));
     // texmapPlacement && texmapPlacement.use();
 }
 

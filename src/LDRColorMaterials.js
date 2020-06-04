@@ -1,12 +1,13 @@
-window.LDR = window.LDR || {};
+import { LDRColors } from "./colors";
+import { createConditionalVertexShader, createSimpleVertexShader, AlphaTestFragmentShader, SimpleFragmentShader } from "./LDRShaders"
+import {adapter} from "./adapter/Adapter"
+
+let canBeOld = false;
+
+let ColorMaterialIdx = 0;
 
 
-LDR.Colors.canBeOld = false;
-
-LDR.ColorMaterialIdx = 0;
-
-
-LDR.Colors.getHighContrastColor4 = function (colorID) {
+export let getHighContrastColor4 = function (colorID) {
     if (colorID === 0 || colorID === 256 || colorID === 64 || colorID === 32 || colorID === 83) {
         return adapter.Vector4.create(1, 1, 1, 1);
     }
@@ -19,15 +20,15 @@ LDR.Colors.getHighContrastColor4 = function (colorID) {
 }
 
 
-LDR.Colors.isTrans = function (colorID) {
-    return LDR.Colors[colorID < 0 ? -colorID - 1 : colorID].alpha > 0;
+export let isTrans = function (colorID) {
+    return LDRColors[colorID < 0 ? -colorID - 1 : colorID].alpha > 0;
 }
 
 
-LDR.Colors.buildLineMaterial = function (colorManager, color, conditional) {
+export let buildLineMaterial = function (colorManager, color, conditional) {
     colorManager = colorManager.clone();
     colorManager.overWrite(color);
-    colorManager.idMaterial = LDR.ColorMaterialIdx++;
+    colorManager.idMaterial = ColorMaterialIdx++;
 
     // let colors = (LDR.Options && LDR.Options.lineContrast === 0) ?
     //   colorManager.highContrastShaderColors : colorManager.shaderColors;
@@ -36,7 +37,7 @@ LDR.Colors.buildLineMaterial = function (colorManager, color, conditional) {
     let len = colors.length;
 
     let uniforms = {};
-    if (LDR.Colors.canBeOld) {
+    if (canBeOld) {
         uniforms['old'] = { value: false };
     }
     if (len > 1) {
@@ -48,12 +49,12 @@ LDR.Colors.buildLineMaterial = function (colorManager, color, conditional) {
     let ret = adapter.RawShaderMaterial.create({
         uniforms: uniforms,
         vertexShader: (conditional ?
-            LDR.Shader.createConditionalVertexShader(LDR.Colors.canBeOld, colors, true) :
-            // LDR.Shader.createSimpleVertexShader(LDR.Colors.canBeOld, colors, true, true, false)),
-            LDR.Shader.createSimpleVertexShader(LDR.Colors.canBeOld, colors, true, true)),
+            createConditionalVertexShader(canBeOld, colors, true) :
+            // LDR.Shader.createSimpleVertexShader(canBeOld, colors, true, true, false)),
+            createSimpleVertexShader(canBeOld, colors, true, true)),
         fragmentShader: (conditional ?
-            LDR.Shader.AlphaTestFragmentShader :
-            LDR.Shader.SimpleFragmentShader),
+            AlphaTestFragmentShader :
+            SimpleFragmentShader),
         transparent: false,
         visible: true
     });
@@ -62,15 +63,15 @@ LDR.Colors.buildLineMaterial = function (colorManager, color, conditional) {
 }
 
 
-// LDR.Colors.buildTriangleMaterial = function (colorManager, color, texmap) {
-LDR.Colors.buildTriangleMaterial = function (colorManager, color) {
+// LDRColors.buildTriangleMaterial = function (colorManager, color, texmap) {
+export let buildTriangleMaterial = function (colorManager, color) {
     colorManager = colorManager.clone();
     colorManager.overWrite(color);
     let colors = colorManager.shaderColors;
     let len = colors.length;
 
     let uniforms = {};
-    if (LDR.Colors.canBeOld) {
+    if (canBeOld) {
         uniforms['old'] = { value: false };
     }
     if (len > 1) {
@@ -87,10 +88,10 @@ LDR.Colors.buildTriangleMaterial = function (colorManager, color) {
 
     let ret = adapter.RawShaderMaterial.create({
         uniforms: uniforms,
-        // vertexShader: LDR.Shader.createSimpleVertexShader(LDR.Colors.canBeOld, colors, false, false, texmap),
-        vertexShader: LDR.Shader.createSimpleVertexShader(LDR.Colors.canBeOld, colors, false, false),
+        // vertexShader: LDR.Shader.createSimpleVertexShader(canBeOld, colors, false, false, texmap),
+        vertexShader: createSimpleVertexShader(canBeOld, colors, false, false),
         // fragmentShader: texmap ? LDR.Shader.TextureFragmentShader : LDR.Shader.SimpleFragmentShader,
-        fragmentShader: LDR.Shader.SimpleFragmentShader,
+        fragmentShader: SimpleFragmentShader,
         transparent: isTrans,
         depthWrite: !isTrans
     });

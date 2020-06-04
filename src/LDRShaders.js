@@ -1,15 +1,15 @@
 'use strict';
 
-window.LDR = window.LDR || {};
+import {adapter} from "./adapter/Adapter"
+import {LDRColors} from "./colors"
 
-LDR.Shader = {};
 
-LDR.Shader.createShaderHeader = function (canBeOld, numberOfColors, c, defaultIsEdge) {
+export let createShaderHeader = function (canBeOld, numberOfColors, c, defaultIsEdge) {
     let ret = 'precision highp float;precision mediump int;';
 
     if (canBeOld) {
         ret += "  uniform bool old;\n";
-        let oldColor = adapter.Color.createWithHex(defaultIsEdge ? LDR.Colors[16].edge : LDR.Colors[16].value);
+        let oldColor = adapter.Color.createWithHex(defaultIsEdge ? LDRColors[16].edge : LDRColors[16].value);
         ret += "  const vec4 oldColor = vec4(" + oldColor.r + "," + oldColor.g + "," + oldColor.b + ",1);\n";
     }
 
@@ -23,8 +23,8 @@ LDR.Shader.createShaderHeader = function (canBeOld, numberOfColors, c, defaultIs
     return ret;
 }
 
-// LDR.Shader.createShaderBody = function (canBeOld, multiColored, hasTexmap) {
-LDR.Shader.createShaderBody = function (canBeOld, multiColored) {
+// createShaderBody = function (canBeOld, multiColored, hasTexmap) {
+export let createShaderBody = function (canBeOld, multiColored) {
     let ret = '  uniform mat4 projectionMatrix;uniform mat4 modelViewMatrix;\n';
     // if (hasTexmap) {
     //     ret += "  attribute vec2 uv;\n";
@@ -57,16 +57,16 @@ LDR.Shader.createShaderBody = function (canBeOld, multiColored) {
     return ret;
 }
 
-// LDR.Shader.createSimpleVertexShader = function (canBeOld, colors, push, defaultIsEdge, hasTexmap) {
-LDR.Shader.createSimpleVertexShader = function (canBeOld, colors, push, defaultIsEdge) {
+// createSimpleVertexShader = function (canBeOld, colors, push, defaultIsEdge, hasTexmap) {
+export let createSimpleVertexShader = function (canBeOld, colors, push, defaultIsEdge) {
     let numberOfColors = colors.length;
     if (numberOfColors === 0) {
         throw "No colors!";
     }
-    let ret = LDR.Shader.createShaderHeader(canBeOld, numberOfColors, colors[0], defaultIsEdge);
+    let ret = createShaderHeader(canBeOld, numberOfColors, colors[0], defaultIsEdge);
 
-    // ret += LDR.Shader.createShaderBody(canBeOld, numberOfColors > 1, hasTexmap);
-    ret += LDR.Shader.createShaderBody(canBeOld, numberOfColors > 1);
+    // ret += createShaderBody(canBeOld, numberOfColors > 1, hasTexmap);
+    ret += createShaderBody(canBeOld, numberOfColors > 1);
     if (push) {
         ret += "gl_Position.w -= 0.0000005;";
     }
@@ -76,7 +76,7 @@ LDR.Shader.createSimpleVertexShader = function (canBeOld, colors, push, defaultI
 
 // See 'http://www.ldraw.org/article/218.html' for specification of optional/conditional lines.
 // A conditional line is drawn when the camera sees p3 and p4 on same side of line p1 p2.
-LDR.Shader.createConditionalVertexShader = function (canBeOld, colors, push) {
+export let createConditionalVertexShader = function (canBeOld, colors, push) {
     let numberOfColors = colors.length;
     let c = colors[0];
 
@@ -84,7 +84,7 @@ LDR.Shader.createConditionalVertexShader = function (canBeOld, colors, push) {
 
     if (canBeOld) {
         ret += "  uniform bool old;\n";
-        let oldColor = adapter.Color.createWithHex(LDR.Colors[16].edge);
+        let oldColor = adapter.Color.createWithHex(LDRColors[16].edge);
         ret += "  const vec4 oldColor = vec4(" + oldColor.r + "," + oldColor.g + "," + oldColor.b + ",1);\n";
     }
 
@@ -116,8 +116,8 @@ LDR.Shader.createConditionalVertexShader = function (canBeOld, colors, push) {
     return ret;
 }
 
-LDR.Shader.SimpleFragmentShader = 'precision lowp float;varying vec4 vColor;void main(){gl_FragColor=vColor;}';
+export let SimpleFragmentShader = 'precision lowp float;varying vec4 vColor;void main(){gl_FragColor=vColor;}';
 
-LDR.Shader.AlphaTestFragmentShader = 'precision lowp float;varying vec4 vColor;void main(){if(vColor.a <= 0.001)discard;gl_FragColor = vColor;}';
+export let AlphaTestFragmentShader = 'precision lowp float;varying vec4 vColor;void main(){if(vColor.a <= 0.001)discard;gl_FragColor = vColor;}';
 
-LDR.Shader.TextureFragmentShader = 'precision lowp float;varying vec4 vColor;varying vec2 vuv;uniform sampler2D map;void main(){if(vuv.x >= 0.0 && vuv.x <= 1.0 && vuv.y >= 0.0 && vuv.y <= 1.0){gl_FragColor = texture2D(map,vuv);if(gl_FragColor.a < 1.0){gl_FragColor=mix(gl_FragColor,vColor,1.0-gl_FragColor.a);}}else{gl_FragColor=vColor;}}';
+export let TextureFragmentShader = 'precision lowp float;varying vec4 vColor;varying vec2 vuv;uniform sampler2D map;void main(){if(vuv.x >= 0.0 && vuv.x <= 1.0 && vuv.y >= 0.0 && vuv.y <= 1.0){gl_FragColor = texture2D(map,vuv);if(gl_FragColor.a < 1.0){gl_FragColor=mix(gl_FragColor,vColor,1.0-gl_FragColor.a);}}else{gl_FragColor=vColor;}}';

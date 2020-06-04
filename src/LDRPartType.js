@@ -1,4 +1,9 @@
-let LDRPartType = function () {
+import {LDRGeometry} from "./LDRGeometry"
+import {adapter} from "./adapter/Adapter"
+import {LDRColorManager} from "./LDRColorManager"
+import {buildLineMaterial, buildTriangleMaterial} from "./LDRColorMaterials"
+
+export let LDRPartType = function () {
     this.name; // The value for '0 FILE' and '0 Name:'.
     this.ID = null; // this.name, but lower case and with backslashes replaced with forward slashes.
     this.modelDescription;
@@ -136,7 +141,7 @@ LDRPartType.prototype.ensureGeometry = function (loader) {
     if (this.geometry) {
         return; // Already prepared.
     }
-    this.geometry = new LDR.LDRGeometry();
+    this.geometry = new LDRGeometry();
     this.geometry.fromPartType(loader, this);
     // if (loader.cleanUpPrimitivesAndSubParts) {
     //     this.removePrimitivesAndSubParts(loader);
@@ -181,14 +186,14 @@ LDRPartType.prototype.generateThreePart = function (loader, c, p, r, mc, pd) {
     );
 
     if (this.geometry.lineGeometry) {
-        let material = new LDR.Colors.buildLineMaterial(this.geometry.lineColorManager, c, false);
+        let material = new buildLineMaterial(this.geometry.lineColorManager, c, false);
         let normalLines = adapter.LineSegments.create(this.geometry.lineGeometry, material);
         normalLines = adapter.LineSegments.applyMatrix4(m4, normalLines);
         mc.addLines(normalLines, pd, false);
     }
 
     if (this.geometry.conditionalLineGeometry) {
-        let material = new LDR.Colors.buildLineMaterial(this.geometry.lineColorManager, c, true);
+        let material = new buildLineMaterial(this.geometry.lineColorManager, c, true);
         let conditionalLines = adapter.LineSegments.create(this.geometry.conditionalLineGeometry, material);
         conditionalLines = adapter.LineSegments.applyMatrix4(m4, conditionalLines);
         mc.addLines(conditionalLines, pd, true);
@@ -203,13 +208,13 @@ LDRPartType.prototype.generateThreePart = function (loader, c, p, r, mc, pd) {
 
         let material;
         // if (loader.physicalRenderingAge === 0) { // Simple rendering:
-        let triangleColorManager = new LDR.ColorManager();
+        let triangleColorManager = new LDRColorManager();
         triangleColorManager.get(tc); // Ensure color is present.
-        material = new LDR.Colors.buildTriangleMaterial(triangleColorManager, c, false);
+        material = new buildTriangleMaterial(triangleColorManager, c, false);
         // }
         // else { // Physical rendering:
         //     tc = tc === '16' ? c : tc;
-        //     material = LDR.Colors.buildStandardMaterial(tc);
+        //     material = LDRColors.buildStandardMaterial(tc);
         // }
         let mesh = adapter.Mesh.create(adapter.Geometry.clone(g), material); // Using clone to ensure matrix in next line doesn't affect other usages of the geometry.
         // mesh.castShadow = loader.physicalRenderingAge !== 0;
@@ -231,13 +236,13 @@ LDRPartType.prototype.generateThreePart = function (loader, c, p, r, mc, pd) {
     //         let material;
     //         let buildMaterial, setMap;
     //         if (loader.physicalRenderingAge === 0) {
-    //             let triangleColorManager = new LDR.ColorManager();
+    //             let triangleColorManager = new LDRColorManager();
     //             triangleColorManager.get(c2); // Ensure color is present.
-    //             buildMaterial = t => LDR.Colors.buildTriangleMaterial(triangleColorManager, c3, t);
+    //             buildMaterial = t => LDRColors.buildTriangleMaterial(triangleColorManager, c3, t);
     //             setMap = t => material.uniforms.map = { type: 't', value: t };
     //         }
     //         else {
-    //             buildMaterial = t => LDR.Colors.buildStandardMaterial(c3, t);
+    //             buildMaterial = t => LDRColors.buildStandardMaterial(c3, t);
     //             setMap = t => material.map = t;
     //         }
 

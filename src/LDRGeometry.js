@@ -1,16 +1,17 @@
 'use strict';
 
+import {adapter} from "./adapter/Adapter"
+import {LDRColorManager} from "./LDRColorManager"
 
-window.LDR = window.LDR || {};
 
-LDR.EPS = 1e-5;
+export let EPS = 1e-5;
 
 /*
   Binary merge of the geometry streams.
  */
-LDR.mergeGeometries = function (geometries) {
+export let mergeGeometries = function (geometries) {
     if (geometries.length === 0) {
-        return new LDR.LDRGeometry();
+        return new LDRGeometry();
     }
     while (geometries.length > 1) { // Repeat rounds until only 1 left:
         let nextGeometries = []; // Result of round.
@@ -31,7 +32,7 @@ LDR.mergeGeometries = function (geometries) {
 /*
   A vertex is sorted by {x,y,z,c}.
  */
-LDR.vertexSorter = function (a, b) {
+export let vertexSorter = function (a, b) {
     if (a.x !== b.x) {
         return a.x - b.x;
     }
@@ -41,7 +42,7 @@ LDR.vertexSorter = function (a, b) {
     return a.z - b.z;
 }
 
-LDR.vertexLessThan = function (a, b) {
+export let vertexLessThan = function (a, b) {
     if (a.x !== b.x) {
         return a.x < b.x;
     }
@@ -51,13 +52,13 @@ LDR.vertexLessThan = function (a, b) {
     return a.z < b.z;
 }
 
-LDR.vertexEqual = function (a, b) {
-    return Math.abs(a.x - b.x) < LDR.EPS &&
-        Math.abs(a.y - b.y) < LDR.EPS &&
-        Math.abs(a.z - b.z) < LDR.EPS;
+export let vertexEqual = function (a, b) {
+    return Math.abs(a.x - b.x) < EPS &&
+        Math.abs(a.y - b.y) < EPS &&
+        Math.abs(a.z - b.z) < EPS;
 }
 
-LDR.LDRGeometry = function () {
+export let LDRGeometry = function () {
     this.vertices = []; // Sorted (x,y,z,o), where 'o' is a LEGO-logo indicator.
     this.lines = {}; // c -> [{p1,p2},...] (color -> indices)
     this.conditionalLines = {}; // c -> [{p1,p2,p3,p4},...]
@@ -78,7 +79,7 @@ LDR.LDRGeometry = function () {
 // /*
 //   Used for showing points where all vertices are.
 //  */
-// LDR.LDRGeometry.prototype.buildVertexAttribute = function (r) {
+// LDRGeometry.prototype.buildVertexAttribute = function (r) {
 //     let vertices = [];
 //     this.vertices.forEach(v => {
 //         let p = new THREE.Vector3(v.x, v.y, v.z);
@@ -88,8 +89,8 @@ LDR.LDRGeometry = function () {
 //     return new THREE.Float32BufferAttribute(vertices, 3);
 // }
 
-LDR.LDRGeometry.prototype.buildGeometriesAndColorsForLines = function () {
-    this.lineColorManager = new LDR.ColorManager();
+LDRGeometry.prototype.buildGeometriesAndColorsForLines = function () {
+    this.lineColorManager = new LDRColorManager();
 
     // Vertices for the geometries have size 3 for single color geometries and size 4 for multi-colored (they include color indices as fourth component):
     // First handle line vertices:
@@ -169,7 +170,7 @@ LDR.LDRGeometry.prototype.buildGeometriesAndColorsForLines = function () {
 /*
   Build geometries and color managers for standard (quick draw) drawing (seen in building instructions and parts lists)
  */
-LDR.LDRGeometry.prototype.buildGeometriesAndColors = function () {
+LDRGeometry.prototype.buildGeometriesAndColors = function () {
     if (this.geometriesBuilt) {
         return; // Already built.
     }
@@ -231,142 +232,142 @@ LDR.LDRGeometry.prototype.buildGeometriesAndColors = function () {
     this.geometriesBuilt = true;
 }
 
-LDR.LDRGeometry.prototype.buildTexmapGeometriesForColor = function (c) {
-    let self = this;
+// LDRGeometry.prototype.buildTexmapGeometriesForColor = function (c) {
+//     let self = this;
 
-    let texmapped = {}; // idx => [{p,size,noBFC}]
-    function check(ps, q, noBFC) {
-        if (!ps.hasOwnProperty(c)) {
-            return;
-        }
-        ps[c].filter(p => p.t).forEach(p => {
-            if (!texmapped.hasOwnProperty(p.t.idx)) {
-                texmapped[p.t.idx] = [];
-            }
-            texmapped[p.t.idx].push({ p: p, q: q, noBFC: noBFC });
-        });
-    }
-    check(self.triangles, false, false);
-    check(self.triangles2, false, true);
-    check(self.quads, true, false);
-    check(self.quads2, true, true);
+//     let texmapped = {}; // idx => [{p,size,noBFC}]
+//     function check(ps, q, noBFC) {
+//         if (!ps.hasOwnProperty(c)) {
+//             return;
+//         }
+//         ps[c].filter(p => p.t).forEach(p => {
+//             if (!texmapped.hasOwnProperty(p.t.idx)) {
+//                 texmapped[p.t.idx] = [];
+//             }
+//             texmapped[p.t.idx].push({ p: p, q: q, noBFC: noBFC });
+//         });
+//     }
+//     check(self.triangles, false, false);
+//     check(self.triangles2, false, true);
+//     check(self.quads, true, false);
+//     check(self.quads2, true, true);
 
-    for (let idx in texmapped) {
-        if (!texmapped.hasOwnProperty(idx)) {
-            return;
-        }
-        let primitiveList = texmapped[idx];
+//     for (let idx in texmapped) {
+//         if (!texmapped.hasOwnProperty(idx)) {
+//             return;
+//         }
+//         let primitiveList = texmapped[idx];
 
-        // Build indexed geometry for the texture:
-        let vertices = []; // x 3
-        let indices = []; // x 1
-        let uvs = []; // x 2
-        let indexMap = {}; // original index -> new index
+//         // Build indexed geometry for the texture:
+//         let vertices = []; // x 3
+//         let indices = []; // x 1
+//         let uvs = []; // x 2
+//         let indexMap = {}; // original index -> new index
 
-        //let uvs = new Float32Array(triangleVertices.length*2); // TODO!
+//         //let uvs = new Float32Array(triangleVertices.length*2); // TODO!
 
-        // Compute ps and uvs:
-        let texmapPlacement;
-        function set(a, b, c) {
-            let vertex = self.vertices[a];
-            let [u, v] = texmapPlacement.getUV(vertex, self.vertices[b], self.vertices[c]);
+//         // Compute ps and uvs:
+//         let texmapPlacement;
+//         function set(a, b, c) {
+//             let vertex = self.vertices[a];
+//             let [u, v] = texmapPlacement.getUV(vertex, self.vertices[b], self.vertices[c]);
 
-            if (indexMap.hasOwnProperty(a)) {
-                let idx = indexMap[a];
-                // Check UV:
-                let oldU = uvs[2 * idx], oldV = uvs[2 * idx + 1];
-                /*if(oldU === u && oldV === v) { TODO!
-                    indices.push(idx);
-                    return;
-                    } TODO */
-            }
+//             if (indexMap.hasOwnProperty(a)) {
+//                 let idx = indexMap[a];
+//                 // Check UV:
+//                 let oldU = uvs[2 * idx], oldV = uvs[2 * idx + 1];
+//                 /*if(oldU === u && oldV === v) { TODO!
+//                     indices.push(idx);
+//                     return;
+//                     } TODO */
+//             }
 
-            let idx = indices.length;
-            indexMap[a] = idx;
-            vertices.push(vertex.x, vertex.y, vertex.z);
-            indices.push(idx);
-            uvs.push(u, v);
-        }
-        function setAll(a, b, c) {
-            set(a, b, c);
-            set(b, a, c);
-            set(c, a, b);
-        }
-        primitiveList.forEach(ele => {
-            let p = ele.p, q = ele.q, noBFC = ele.noBFC;
-            texmapPlacement = p.t;
+//             let idx = indices.length;
+//             indexMap[a] = idx;
+//             vertices.push(vertex.x, vertex.y, vertex.z);
+//             indices.push(idx);
+//             uvs.push(u, v);
+//         }
+//         function setAll(a, b, c) {
+//             set(a, b, c);
+//             set(b, a, c);
+//             set(c, a, b);
+//         }
+//         primitiveList.forEach(ele => {
+//             let p = ele.p, q = ele.q, noBFC = ele.noBFC;
+//             texmapPlacement = p.t;
 
-            setAll(p.p1, p.p2, p.p3);
-            if (noBFC) {
-                setAll(p.p3, p.p2, p.p1);
-            }
-            if (q) { // Quad:
-                setAll(p.p1, p.p3, p.p4);
-                if (noBFC) {
-                    setAll(p.p4, p.p3, p.p1);
-                }
-            }
-        });
+//             setAll(p.p1, p.p2, p.p3);
+//             if (noBFC) {
+//                 setAll(p.p3, p.p2, p.p1);
+//             }
+//             if (q) { // Quad:
+//                 setAll(p.p1, p.p3, p.p4);
+//                 if (noBFC) {
+//                     setAll(p.p4, p.p3, p.p1);
+//                 }
+//             }
+//         });
 
-        let g = self.buildGeometry(indices, new THREE.Float32BufferAttribute(vertices, 3));
-        g.computeVertexNormals(); // Also normalizes.
+//         let g = self.buildGeometry(indices, new THREE.Float32BufferAttribute(vertices, 3));
+//         g.computeVertexNormals(); // Also normalizes.
 
-        g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-        if (!self.texmapGeometries.hasOwnProperty(texmapPlacement.idx)) {
-            self.texmapGeometries[texmapPlacement.idx] = [];
-        }
-        self.texmapGeometries[texmapPlacement.idx].push({ c: c, g: g });
-    }
-}
+//         g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+//         if (!self.texmapGeometries.hasOwnProperty(texmapPlacement.idx)) {
+//             self.texmapGeometries[texmapPlacement.idx] = [];
+//         }
+//         self.texmapGeometries[texmapPlacement.idx].push({ c: c, g: g });
+//     }
+// }
 
 // Optimized version of the one found in https://github.com/mrdoob/three.js/blob/master/src/core/BufferGeometry.js
-THREE.BufferGeometry.prototype.computeVertexNormals = function () {
-    var attributes = this.attributes;
-    var positions = attributes.position.array;
+// THREE.BufferGeometry.prototype.computeVertexNormals = function () {
+//     var attributes = this.attributes;
+//     var positions = attributes.position.array;
 
-    this.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(positions.length), 3));
-    var normals = attributes.normal.array;
+//     this.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(positions.length), 3));
+//     var normals = attributes.normal.array;
 
-    var vA, vB, vC;
-    var pA = new THREE.Vector3(), pB = new THREE.Vector3(), pC = new THREE.Vector3();
-    var cb = new THREE.Vector3(), ab = new THREE.Vector3();
+//     var vA, vB, vC;
+//     var pA = new THREE.Vector3(), pB = new THREE.Vector3(), pC = new THREE.Vector3();
+//     var cb = new THREE.Vector3(), ab = new THREE.Vector3();
 
-    var index = this.index;
-    var indices = index.array;
-    for (var i = 0, il = index.count; i < il; i += 3) {
-        vA = indices[i] * 3;
-        vB = indices[i + 1] * 3;
-        vC = indices[i + 2] * 3;
+//     var index = this.index;
+//     var indices = index.array;
+//     for (var i = 0, il = index.count; i < il; i += 3) {
+//         vA = indices[i] * 3;
+//         vB = indices[i + 1] * 3;
+//         vC = indices[i + 2] * 3;
 
-        pA.fromArray(positions, vA);
-        pB.fromArray(positions, vB);
-        pC.fromArray(positions, vC);
+//         pA.fromArray(positions, vA);
+//         pB.fromArray(positions, vB);
+//         pC.fromArray(positions, vC);
 
-        cb.subVectors(pC, pB);
-        ab.subVectors(pA, pB);
-        cb.cross(ab);
+//         cb.subVectors(pC, pB);
+//         ab.subVectors(pA, pB);
+//         cb.cross(ab);
 
-        normals[vA] += cb.x;
-        normals[vA + 1] += cb.y;
-        normals[vA + 2] += cb.z;
+//         normals[vA] += cb.x;
+//         normals[vA + 1] += cb.y;
+//         normals[vA + 2] += cb.z;
 
-        normals[vB] += cb.x;
-        normals[vB + 1] += cb.y;
-        normals[vB + 2] += cb.z;
+//         normals[vB] += cb.x;
+//         normals[vB + 1] += cb.y;
+//         normals[vB + 2] += cb.z;
 
-        normals[vC] += cb.x;
-        normals[vC + 1] += cb.y;
-        normals[vC + 2] += cb.z;
-    }
-    this.normalizeNormals();
-    attributes.normal.needsUpdate = true;
-}
+//         normals[vC] += cb.x;
+//         normals[vC + 1] += cb.y;
+//         normals[vC + 2] += cb.z;
+//     }
+//     this.normalizeNormals();
+//     attributes.normal.needsUpdate = true;
+// }
 
 /**
    This function also computes normals and UV's to be used by standard materials.
  */
-LDR.LDRGeometry.UV_WarningWritten = false;
-// LDR.LDRGeometry.prototype.buildPhysicalGeometriesAndColors = function () {
+// LDRGeometry.UV_WarningWritten = false;
+// LDRGeometry.prototype.buildPhysicalGeometriesAndColors = function () {
 //     if (this.geometriesBuilt) {
 //         return;
 //     }
@@ -544,10 +545,10 @@ LDR.LDRGeometry.UV_WarningWritten = false;
 //                     let turn = uv => (prev.u - prevprev.u) * (uv.v - prevprev.v) - (prev.v - prevprev.v) * (uv.u - prevprev.u);
 //                     for (let i = 0; i < ret.length; i++) {
 //                         let uv = ret[i];
-//                         if (Math.abs(prev.u - uv.u) < LDR.EPS && Math.abs(prev.v - uv.v) < LDR.EPS ||
-//                             Math.abs(prevprev.u - uv.u) < LDR.EPS && Math.abs(prevprev.v - uv.v) < LDR.EPS ||
+//                         if (Math.abs(prev.u - uv.u) < EPS && Math.abs(prev.v - uv.v) < EPS ||
+//                             Math.abs(prevprev.u - uv.u) < EPS && Math.abs(prevprev.v - uv.v) < EPS ||
 //                             Math.abs(turn(uv)) < 1e-7) {
-//                             if (!LDR.LDRGeometry.UV_WarningWritten) {
+//                             if (!LDRGeometry.UV_WarningWritten) {
 //                                 console.log('UV issue insights for debugging. Underlying data points (vertices and normals):');
 //                                 console.dir(vs);
 //                                 console.dir(ns);
@@ -555,7 +556,7 @@ LDR.LDRGeometry.UV_WarningWritten = false;
 //                                 console.dir(ret);
 //                                 console.dir('Turn angle check at failure: ' + turn(uv));
 //                                 console.warn("Degenerate UV! " + uv.u + ', ' + uv.v);
-//                                 LDR.LDRGeometry.UV_WarningWritten = true;
+//                                 LDRGeometry.UV_WarningWritten = true;
 //                             }
 //                             return false;
 //                         }
@@ -574,10 +575,10 @@ LDR.LDRGeometry.UV_WarningWritten = false;
 //             }
 
 //             // Check if at least 3 normals point the same direction:
-//             let equalVector3 = (a, b) => Math.abs(a.x - b.x) < LDR.EPS && Math.abs(a.y - b.y) < LDR.EPS && Math.abs(a.z - b.z) < LDR.EPS;
+//             let equalVector3 = (a, b) => Math.abs(a.x - b.x) < EPS && Math.abs(a.y - b.y) < EPS && Math.abs(a.z - b.z) < EPS;
 //             function atLeast3EqualNormals() {
 //                 let a = [...ns]; // Shallow copy.
-//                 a.sort(LDR.vertexSorter);
+//                 a.sort(vertexSorter);
 //                 if (equalVector3(a[0], a[a.length - 1])) {
 //                     return true; // All equal!
 //                 }
@@ -615,13 +616,13 @@ LDR.LDRGeometry.UV_WarningWritten = false;
 //                     DZ = dz;
 //                 }
 
-//                 if (maxDiff(vs.map(v => v.x)) < LDR.EPS) { // y/z projection:
+//                 if (maxDiff(vs.map(v => v.x)) < EPS) { // y/z projection:
 //                     setUV(DY, DZ, true);
 //                 }
-//                 else if (maxDiff(vs.map(v => v.y)) < LDR.EPS) {
+//                 else if (maxDiff(vs.map(v => v.y)) < EPS) {
 //                     setUV(DX, DZ, true);
 //                 }
-//                 else if (maxDiff(vs.map(v => v.z)) < LDR.EPS) {
+//                 else if (maxDiff(vs.map(v => v.z)) < EPS) {
 //                     setUV(DX, DY, true);
 //                 }
 //                 else if (NX >= NY && NX >= NZ) {
@@ -675,7 +676,7 @@ LDR.LDRGeometry.UV_WarningWritten = false;
 //     //this.cleanTempData();
 // }
 
-LDR.LDRGeometry.prototype.cleanTempData = function () {
+LDRGeometry.prototype.cleanTempData = function () {
     delete this.vertices;
     delete this.lines;
     delete this.conditionalLines;
@@ -685,7 +686,7 @@ LDR.LDRGeometry.prototype.cleanTempData = function () {
     delete this.triangles2;
 }
 
-LDR.LDRGeometry.prototype.buildGeometry = function (indices, vertexAttribute) {
+LDRGeometry.prototype.buildGeometry = function (indices, vertexAttribute) {
     if (indices.length === 0) {
         return null;
     }
@@ -696,7 +697,7 @@ LDR.LDRGeometry.prototype.buildGeometry = function (indices, vertexAttribute) {
     return g;
 }
 
-LDR.LDRGeometry.prototype.buildGeometryForConditionalLines = function (multiColored, conditionalLines) {
+LDRGeometry.prototype.buildGeometryForConditionalLines = function (multiColored, conditionalLines) {
     if (conditionalLines.length === 0) {
         return;
     }
@@ -743,7 +744,7 @@ LDR.LDRGeometry.prototype.buildGeometryForConditionalLines = function (multiColo
     }
 }
 
-LDR.LDRGeometry.prototype.replaceWith = function (g) {
+LDRGeometry.prototype.replaceWith = function (g) {
     this.vertices = g.vertices;
     this.lines = g.lines;
     this.conditionalLines = g.conditionalLines;
@@ -754,7 +755,7 @@ LDR.LDRGeometry.prototype.replaceWith = function (g) {
     this.boundingBox = g.boundingBox;
 }
 
-LDR.LDRGeometry.prototype.replaceWithDeep = function (g) {
+LDRGeometry.prototype.replaceWithDeep = function (g) {
     let self = this;
     g.vertices.forEach(v => self.vertices.push({ x: v.x, y: v.y, z: v.z, o: v.o }));
 
@@ -812,57 +813,57 @@ LDR.LDRGeometry.prototype.replaceWithDeep = function (g) {
 /*
   Build this from the 4 types of primitives.
 */
-LDR.LDRGeometry.prototype.fromPrimitives = function (lines, conditionalLines, triangles, quads) {
+LDRGeometry.prototype.fromPrimitives = function (lines, conditionalLines, triangles, quads) {
     let geometries = [];
 
     if (lines.length > 0) {
-        let g = new LDR.LDRGeometry();
+        let g = new LDRGeometry();
         g.fromLines(lines);
         geometries.push(g);
     }
     if (conditionalLines.length > 0) {
-        let g = new LDR.LDRGeometry();
+        let g = new LDRGeometry();
         g.fromConditionalLines(conditionalLines);
         geometries.push(g);
     }
     let culledTriangles = triangles.filter(t => t.cull);
     if (culledTriangles.length > 0) {
-        let g = new LDR.LDRGeometry();
+        let g = new LDRGeometry();
         g.fromTriangles(true, culledTriangles);
         geometries.push(g);
     }
     let unculledTriangles = triangles.filter(t => !t.cull);
     if (unculledTriangles.length > 0) {
-        let g = new LDR.LDRGeometry();
+        let g = new LDRGeometry();
         g.fromTriangles(false, unculledTriangles);
         geometries.push(g);
     }
     let culledQuads = quads.filter(q => q.cull);
     if (culledQuads.length > 0) {
-        let g = new LDR.LDRGeometry();
+        let g = new LDRGeometry();
         g.fromQuads(true, culledQuads);
         geometries.push(g);
     }
     let unculledQuads = quads.filter(q => !q.cull);
     if (unculledQuads.length > 0) {
-        let g = new LDR.LDRGeometry();
+        let g = new LDRGeometry();
         g.fromQuads(false, unculledQuads);
         geometries.push(g);
     }
-    this.replaceWith(LDR.mergeGeometries(geometries));
+    this.replaceWith(mergeGeometries(geometries));
 }
 
 /*
   Assumes unsorted vertices that reference the primitives.
   This function sort the vertices and updates the primitives to reference the vertices.
  */
-LDR.LDRGeometry.prototype.sortAndBurnVertices = function (vertices, primitives) {
-    vertices.sort(LDR.vertexSorter);
+LDRGeometry.prototype.sortAndBurnVertices = function (vertices, primitives) {
+    vertices.sort(vertexSorter);
     let idx = this.vertices.length - 1;
     let prev;
     for (let i = 0; i < vertices.length; i++) {
         let v = vertices[i];
-        if (!(prev && LDR.vertexEqual(prev, v))) {
+        if (!(prev && vertexEqual(prev, v))) {
             this.vertices.push({ x: v.x, y: v.y, z: v.z, o: false });
             idx++;
         }
@@ -888,7 +889,7 @@ LDR.LDRGeometry.prototype.sortAndBurnVertices = function (vertices, primitives) 
 /*
   Build a geometry from {p1,p2,c} lines.
  */
-LDR.LDRGeometry.prototype.fromLines = function (ps) {
+LDRGeometry.prototype.fromLines = function (ps) {
     let vertices = [];
     for (let i = 0; i < ps.length; i++) {
         let p = ps[i], idx;
@@ -909,7 +910,7 @@ LDR.LDRGeometry.prototype.fromLines = function (ps) {
     this.sortAndBurnVertices(vertices, this.lines);
 }
 
-LDR.LDRGeometry.prototype.fromConditionalLines = function (ps) {
+LDRGeometry.prototype.fromConditionalLines = function (ps) {
     let vertices = [];
     for (let i = 0; i < ps.length; i++) {
         let p = ps[i], idx;
@@ -932,7 +933,7 @@ LDR.LDRGeometry.prototype.fromConditionalLines = function (ps) {
     this.sortAndBurnVertices(vertices, this.conditionalLines);
 }
 
-LDR.LDRGeometry.prototype.fromTriangles = function (cull, ps) {
+LDRGeometry.prototype.fromTriangles = function (cull, ps) {
     let vertices = [];
     let triangles = cull ? this.triangles : this.triangles2;
     let self = this;
@@ -957,7 +958,7 @@ LDR.LDRGeometry.prototype.fromTriangles = function (cull, ps) {
     this.sortAndBurnVertices(vertices, triangles);
 }
 
-LDR.LDRGeometry.prototype.fromQuads = function (cull, ps) {
+LDRGeometry.prototype.fromQuads = function (cull, ps) {
     let vertices = [];
     let quads = cull ? this.quads : this.quads2;
     let self = this;
@@ -987,25 +988,25 @@ LDR.LDRGeometry.prototype.fromQuads = function (cull, ps) {
 /*
   Consolidate the primitives and sub-parts of the step.
 */
-LDR.LDRGeometry.prototype.fromStep = function (loader, step) {
+LDRGeometry.prototype.fromStep = function (loader, step) {
     let geometries = [];
     if (step.hasPrimitives) {
-        let g = new LDR.LDRGeometry();
+        let g = new LDRGeometry();
         g.fromPrimitives(step.lines, step.conditionalLines, step.triangles, step.quads);
         geometries.push(g);
     }
 
     function handleSubModel(subModel) {
-        let g = new LDR.LDRGeometry();
+        let g = new LDRGeometry();
         g.fromPartDescription(loader, subModel);
         geometries.push(g);
     }
     step.subModels.forEach(handleSubModel);
 
-    this.replaceWith(LDR.mergeGeometries(geometries));
+    this.replaceWith(mergeGeometries(geometries));
 }
 
-LDR.LDRGeometry.prototype.fromPartType = function (loader, pt) {
+LDRGeometry.prototype.fromPartType = function (loader, pt) {
     if (pt.steps.length === 1) {
         this.fromStep(loader, pt.steps[0]);
     }
@@ -1014,7 +1015,7 @@ LDR.LDRGeometry.prototype.fromPartType = function (loader, pt) {
     }
 }
 
-LDR.LDRGeometry.prototype.fromPartDescription = function (loader, pd) {
+LDRGeometry.prototype.fromPartDescription = function (loader, pd) {
     let pt = loader.getPartType(pd.ID);
     if (!pt) {
         throw "Part not loaded: " + pd.ID;
@@ -1088,7 +1089,7 @@ LDR.LDRGeometry.prototype.fromPartDescription = function (loader, pd) {
         v.o = v.o || (lp && lp.x === v.x && lp.y === v.y && lp.z === v.z);
     }
     let newIndices = [];
-    this.vertices.sort(LDR.vertexSorter);
+    this.vertices.sort(vertexSorter);
     for (let i = 0; i < this.vertices.length; i++) {
         let v = this.vertices[i];
         newIndices[v.oldIndex] = i;
@@ -1162,7 +1163,7 @@ LDR.LDRGeometry.prototype.fromPartDescription = function (loader, pd) {
     // }
 }
 
-LDR.LDRGeometry.prototype.mapIndices = function (map) {
+LDRGeometry.prototype.mapIndices = function (map) {
     let map2 = function (p, map) {
         p.p1 = map[p.p1];
         p.p2 = map[p.p2];
@@ -1211,7 +1212,7 @@ LDR.LDRGeometry.prototype.mapIndices = function (map) {
     }
 }
 
-LDR.LDRGeometry.prototype.merge = function (other) {
+LDRGeometry.prototype.merge = function (other) {
     // Merge bounding box:
     this.boundingBox = adapter.BoundingBox3.setMin(other.boundingBox.min, this.boundingBox);
     this.boundingBox = adapter.BoundingBox3.setMax(other.boundingBox.max, this.boundingBox);
@@ -1226,7 +1227,7 @@ LDR.LDRGeometry.prototype.merge = function (other) {
     while (idxThis < this.vertices.length && idxOther < other.vertices.length) {
         let pThis = this.vertices[idxThis];
         let pOther = other.vertices[idxOther];
-        if (LDR.vertexEqual(pThis, pOther)) {
+        if (vertexEqual(pThis, pOther)) {
             indexMapThis.push(mergedVertices.length);
             indexMapOther.push(mergedVertices.length);
             pThis.o = pThis.o || pOther.o;
@@ -1234,7 +1235,7 @@ LDR.LDRGeometry.prototype.merge = function (other) {
             ++idxThis;
             ++idxOther;
         }
-        else if (LDR.vertexLessThan(pThis, pOther)) {
+        else if (vertexLessThan(pThis, pOther)) {
             indexMapThis.push(mergedVertices.length);
             mergedVertices.push(pThis);
             ++idxThis;

@@ -1,6 +1,8 @@
-window.LDR = window.LDR || {};
+import {adapter} from "./adapter/Adapter"
+import { LDRColors } from "./colors"
+import { getHighContrastColor4 } from "./LDRColorMaterials"
 
-LDR.ColorManager = function () {
+export let LDRColorManager = function () {
     this.shaderColors = []; // [] => Vector4
     this.highContrastShaderColors = []; // [] => Vector4
     this.map = {}; // colorID -> floatColor
@@ -10,8 +12,8 @@ LDR.ColorManager = function () {
     this.mainColorIsTransparent = false;
 }
 
-LDR.ColorManager.prototype.clone = function () {
-    let ret = new LDR.ColorManager();
+LDRColorManager.prototype.clone = function () {
+    let ret = new LDRColorManager();
     ret.shaderColors.push(...this.shaderColors);
     ret.highContrastShaderColors.push(...this.highContrastShaderColors);
     ret.sixteen = this.sixteen;
@@ -25,14 +27,14 @@ LDR.ColorManager.prototype.clone = function () {
     return ret;
 }
 
-LDR.ColorManager.prototype.overWrite = function (id) {
+LDRColorManager.prototype.overWrite = function (id) {
     if (this.sixteen === -1 && this.edgeSixteen === -1) {
         return;
     }
 
     let isEdge = id < 0;
     let lowID = isEdge ? -id - 1 : id;
-    let colorObject = LDR.Colors[lowID];
+    let colorObject = LDRColors[lowID];
     if (!colorObject) {
         throw "Unknown color: " + id;
     }
@@ -47,13 +49,13 @@ LDR.ColorManager.prototype.overWrite = function (id) {
         let color = adapter.Color.createWithHex(colorObject.edge);
         this.shaderColors[this.edgeSixteen] = adapter.Vector4.create(adapter.Color.getR(color), adapter.Color.getG(color), adapter.Color.getB(color), 1);// Drop alpha from edge lines to increase contrast.
 
-        this.highContrastShaderColors[this.edgeSixteen] = LDR.Colors.getHighContrastColor4(lowID);
+        this.highContrastShaderColors[this.edgeSixteen] = getHighContrastColor4(lowID);
     }
 
     this.lastSet = id;
 }
 
-LDR.ColorManager.prototype.get = function (id) {
+LDRColorManager.prototype.get = function (id) {
     let f = this.map[id];
     if (f) {
         return f;
@@ -67,7 +69,7 @@ LDR.ColorManager.prototype.get = function (id) {
 
     let isEdge = id < 0;
     let lowID = isEdge ? -id - 1 : id;
-    let colorObject = LDR.Colors[lowID];
+    let colorObject = LDRColors[lowID];
     if (!colorObject) {
         throw "Unknown color " + lowID + " from " + id;
     }
@@ -78,11 +80,11 @@ LDR.ColorManager.prototype.get = function (id) {
     f = this.shaderColors.length + 0.1;
     this.map[id] = f;
     this.shaderColors.push(adapter.Vector4.create(adapter.Color.getR(color), adapter.Color.getG(color), adapter.Color.getB(color), alpha));
-    this.highContrastShaderColors.push(LDR.Colors.getHighContrastColor4(lowID));
+    this.highContrastShaderColors.push(getHighContrastColor4(lowID));
     return f;
 }
 
 
-LDR.ColorManager.prototype.containsTransparentColors = function () {
+LDRColorManager.prototype.containsTransparentColors = function () {
     return this.anyTransparentColors || this.mainColorIsTransparent;
 }
