@@ -3,6 +3,7 @@
 import { adapter } from "./adapter/Adapter"
 import { LDRStep } from "./LDRStep"
 import { LDRPartType } from "./LDRPartType"
+import { LDRPartDescription } from "./LDRPartDescription"
 
 
 
@@ -31,7 +32,7 @@ export let makeP = function (desc, name) {
 }
 
 export let makeR = function (a, b) {
-    let ret = new adapter.Matrix3.create(a, 0, 0, 0, b, 0, 0, 0, a);
+    let ret = adapter.Matrix3.create(a, 0, 0, 0, b, 0, 0, 0, a);
     return ret;
 }
 

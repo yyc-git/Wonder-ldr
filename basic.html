@@ -27,7 +27,12 @@
         // The model to be rendered:
         // let model = 'models/corvette_full.mpd';
         // let model = 'models/test3.mpd';
-        let model = 'models/test.ldr';
+        // let model = 'models/test.ldr';
+        // let model = 'models/4x4 pickup.ldr';
+        // let model = 'models/16x16 Microscale Modern House.ldr';
+        let model = 'models/Apple Tree Final.ldr';
+        // let model = 'models/2015-05-10_Dirt-Valley.ldr';
+        
         // let model = 'models/test.mpd';
         // let model = 'models/test.dat';
 
@@ -77,7 +82,20 @@
         // Three.js loader for LDraw models:
         let ldrLoader;
 
-        ldrLoader = new ldr.LDRLoader({});
+        ldrLoader = new ldr.LDRLoader({
+            idToUrl: (id) => {
+                if (!id.endsWith(".dat")) {
+                    return [id];
+                }
+                let lowerID = id.toLowerCase();
+                return [
+                    "ldraw_parts/" + lowerID,
+                    "ldraw_unofficial/parts" + lowerID,
+                    "ldraw_unofficial/p" + lowerID
+                ];
+            }
+        });
+
         ldrLoader.load(model)
             .subscribe({
                 next: (data) => {

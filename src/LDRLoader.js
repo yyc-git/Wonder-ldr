@@ -1,4 +1,4 @@
-import { fromPromise, from, empty, just, mergeArray } from "./lib/most.min.js";
+import { fromPromise, throwError, just, mergeArray } from "./lib/most.min.js";
 
 import { adapter } from "./adapter/Adapter"
 import { LDRPartType } from "./LDRPartType"
@@ -68,12 +68,14 @@ export let LDRLoader = function (options) {
     // this.physicalRenderingAge = this.options.physicalRenderingAge || 0;
     this.mainModel;
 
-    this.idToUrl = this.options.idToUrl || function (id) {
-        if (!id.endsWith(".dat")) {
-            return [id];
-        }
+    this.buildAllPossibleUrls = this.options.buildAllPossibleUrls || function (id) {
         let lowerID = id.toLowerCase();
-        return ["ldraw_parts/" + lowerID, "ldraw_unofficial/" + lowerID];
+        return [
+            "ldraw_parts/p/" + lowerID,
+            "ldraw_parts/parts/" + lowerID,
+            "ldraw_unofficial/p/" + lowerID,
+            "ldraw_unofficial/parts/" + lowerID,
+        ];
     };
 
     // this.idToTextureUrl = this.options.idToTextureUrl || function (id) {
@@ -621,69 +623,45 @@ LDRLoader.prototype.getPartType = function (id) {
 
 
 
-// let _load = (url, defaultID) => {
-//     let self = this;
 
-//     fromPromise(
-//         fetch(url)
-//             .then((value) => value.text)
-//     )
-//         .map((data) => {
-
-//             self.parse(text, id);
-//         })
-// };
+let _loadMainModel = function (url, loader) {
+    return fromPromise(
+        adapter.Network.fetch(url, "text")
+    )
+        .flatMap((text) => {
+            return loader.parse(text, "mainModel");
+        })
+};
 
 
-let _load = function (id, loader) {
-    let urls = loader.idToUrl(id);
-    id = id.toLowerCase().replace('\\', '/'); // Sanitize id. 
-
-    if (loader.partTypes[id]) { // Already loaded
-        if (loader.partTypes[id] !== true) {
-            // this.reportProgress(id);
+let _loadSubModel = function (id, urlIndex, urls, loader) {
+    let tryLoadOtherUrl = function (event) {
+        if (urlIndex < urls.length) {
+            return _loadSubModel(id, urlIndex + 1, urls, loader);
         }
-        return;
+        else {
+            loader.onError({ message: event.currentTarget ? event.currentTarget.statusText : 'Error during loading', subModel: id });
+
+            return throwError(event);
+        }
     }
-    //console.log('Loading ' + id + ' (' + urls.join(' or ') + ')');
-
-    loader.partTypes[id] = true; // Temporary value to prevent concurrent fetching over network.
-
-    // let self = this;
-    // let onFileLoaded = function (text) {
-    //     self.parse(text, id);
-    //     self.unloadedFiles--; // Warning - might have concurrency issue when two threads simultaneously update this!
-    //     self.reportProgress(id);
-    // }
-
-    let urlID = 0;
-    // let onError = function (event) {
-    //     urlID++;
-    //     if (urlID < urls.length) {
-    //         self.loader.load(urls[urlID], onFileLoaded, undefined, onError);
-    //     }
-    //     else {
-    //         self.unloadedFiles--; // Can't load this.
-    //         self.reportProgress(id);
-    //         self.onError({ message: event.currentTarget ? event.currentTarget.statusText : 'Error during loading', subModel: id });
-    //     }
-    // }
-
-    // this.unloadedFiles++;
-    // this.loader.load(urls[urlID], onFileLoaded, undefined, onError);
-    // fromPromise(
-    //     fetch(urls[urlID])
-    //         .then((value) => value.text)
-    // )
-
-    console.log(adapter)
 
     return fromPromise(
-        adapter.Network.fetch(urls[urlID], "text")
-    ).flatMap((text) => {
-        return loader.parse(text, id);
-    });
+        adapter.Network.fetch(urls[urlIndex], "text")
+    )
+        .recoverWith(tryLoadOtherUrl)
 };
+
+
+let _loadSubModelAndParse = function (id, urlIndex, urls, loader) {
+
+    return _loadSubModel(id, urlIndex, urls, loader)
+        .flatMap((text) => {
+            return loader.parse(text, id);
+        })
+};
+
+
 
 
 let _loadMultiple = (id, toBeFetched, loader) => {
@@ -691,18 +669,9 @@ let _loadMultiple = (id, toBeFetched, loader) => {
         return just(id);
     }
 
-    // return mergeArray(
-    //     from(
-    //         toBeFetched
-    //     ).flatMap(id => loader.load(id))
-    // )
-
-
     return mergeArray(
-        toBeFetched.map(id => _load(id, loader))
+        toBeFetched.map(id => _loadSubModelAndParse(id, 0, loader.buildAllPossibleUrls(id), loader))
     )
-
-    // return loader.load(toBeFetched[0])
 };
 
 
@@ -720,17 +689,6 @@ LDRLoader.prototype.loadMultiple = function (id, ids) {
     let toBeFetched = ids;
 
 
-    // if (!LDR.Generator) {
-    //     // _load = (url, defaultID)
-    //     // return from(
-    //     //     toBeFetched.map(this.load)
-    //     // );
-
-    //     // return toBeFetched.map(this.load)
-    //     // TODO fix
-    //     return _loadMultiple(id, toBeFetched, this);
-    //     // onDone(toBeFetched); // Can't do anything, so just pass on the list of parts to be fetched.
-    // }
     // Try to fetch those that can be generated:
     let stillToBeFetched = [];
     toBeFetched.forEach(id => {
@@ -760,14 +718,10 @@ LDRLoader.prototype.loadMultiple = function (id, ids) {
  * Load an ldr/mpd/dat file without checking storage first.
  * 
  * id is the file name to load. 
- * id is transformed using 'idToUrl' which can be parsed to the loader using the options parameter in the constructor.
+ * id is transformed using 'buildUrls' which can be parsed to the loader using the options parameter in the constructor.
  */
-LDRLoader.prototype.load = function (id) {
-    return just(id)
-        .merge(
-            _load(id, this)
-        );
-
+LDRLoader.prototype.load = function (modelUrl) {
+    return _loadMainModel(modelUrl, this)
 };
 
 

@@ -1,6 +1,14 @@
 let Network = {
     fetch: (url, type_) => {
-        return fetch(url).then((value) => value.text());
+        return fetch(url)
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok.');
+                }
+
+                return response;
+            })
+            .then((response) => response.text())
     }
 };
 
