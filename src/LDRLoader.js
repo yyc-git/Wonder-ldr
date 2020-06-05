@@ -1,10 +1,10 @@
 import { fromPromise, from, empty, just, mergeArray } from "./lib/most.min.js";
 
-import {adapter} from "./adapter/Adapter"
-import {LDRPartType} from "./LDRPartType"
-import {LDRPartDescription} from "./LDRPartDescription"
-import {LDRStep} from "./LDRStep"
-import {make} from "./LDRGenerator"
+import { adapter } from "./adapter/Adapter"
+import { LDRPartType } from "./LDRPartType"
+import { LDRPartDescription } from "./LDRPartDescription"
+import { LDRStep } from "./LDRStep"
+import { make } from "./LDRGenerator"
 
 // let fromPromise = most.fromPromise;
 
@@ -676,10 +676,10 @@ let _load = function (id, loader) {
     //         .then((value) => value.text)
     // )
 
+    console.log(adapter)
 
     return fromPromise(
-        fetch(urls[urlID])
-            .then((value) => value.text())
+        adapter.Network.fetch(urls[urlID], "text")
     ).flatMap((text) => {
         return loader.parse(text, id);
     });

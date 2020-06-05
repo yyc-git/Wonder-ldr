@@ -1,28 +1,8 @@
-
-// let Matrix3.create = (a1, a2, a3, a4, a5, a6, a7, a8, a9) => {
-//     let mat = new THREE.Matrix3();
-//     mat.set(a1, a2, a3, a4, a5, a6, a7, a8, a9);
-
-//     return mat;
-// };
-
-
-
-// // let getMatrix3Elements = (mat) => {
-// //     return mat.elements
-// // };
-
-// // let getMatrix3Determinant = (mat) => {
-// //     return mat.determinant();
-// // };
-
-
-// let createMatrix4 = (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16) => {
-//     let mat = new THREE.Matrix4();
-//     mat.set(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16);
-
-//     return mat;
-// };
+let Network = {
+    fetch: (url, type_) => {
+        return fetch(url).then((value) => value.text());
+    }
+};
 
 let Vector3 = {
     create: (x, y, z) => {
@@ -154,14 +134,14 @@ let BoundingBox3 = {
         box3.applyMatrix4(mat4);
         return box3;
     },
-    getMin: ( box3) => {
+    getMin: (box3) => {
         return box3.min;
     },
     setMin: (min, box3) => {
         box3.min.min(min);
         return box3;
     },
-    getMax: ( box3) => {
+    getMax: (box3) => {
         return box3.max;
     },
     setMax: (max, box3) => {
@@ -172,13 +152,14 @@ let BoundingBox3 = {
         b2.copy(b1);
         return b2;
     },
-    expandByPoint: (point, box3) =>{
+    expandByPoint: (point, box3) => {
         box3.expandByPoint(point);
         return box3;
     }
 };
 
 let THREEAdapter = {
+    Network,
     Vector3,
     Vector4,
     Matrix3,
