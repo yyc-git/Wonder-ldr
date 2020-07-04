@@ -1,4 +1,5 @@
-import { fromPromise, throwError, just, mergeArray } from "./lib/most.min.js";
+import { fromPromise, throwError, just } from "most";
+import { concatArray} from "./external/utils/mostUtils";
 
 import { adapter } from "./adapter/Adapter"
 import { LDRPartType } from "./LDRPartType"
@@ -669,7 +670,8 @@ let _loadMultiple = (id, toBeFetched, loader) => {
         return just(id);
     }
 
-    return mergeArray(
+    // return mergeArray(
+    return concatArray(
         toBeFetched.map(id => _loadSubModelAndParse(id, 0, loader.buildAllPossibleUrls(id), loader))
     )
 };
