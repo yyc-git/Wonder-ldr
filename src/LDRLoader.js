@@ -1,4 +1,4 @@
-import { fromPromise, throwError, just } from "most";
+import { fromPromise, throwError, just, empty } from "most";
 import { concatArray } from "./external/utils/mostUtils";
 
 import { adapter } from "./adapter/Adapter"
@@ -829,7 +829,9 @@ LDRLoader.prototype.onPartsLoaded = function (id, loadedParts) {
 }
 
 
-
+LDRLoader.prototype._markLoadedLotId = function (id) {
+    this.loadedLotIds[id] = true;
+}
 
 
 
@@ -866,6 +868,13 @@ let _loadMainModel = function (url, loader) {
         })
 };
 
+let _skipFailLoadedSubModel = (id, loader) => {
+    loader.onError({ message: "can't find subModel, skip it", subModel: id });
+
+    loader._markLoadedLotId(id);
+
+    return empty();
+};
 
 let _loadSubModel = function (id, urlIndex, urls, loader) {
     let tryLoadOtherUrl = function (event) {
@@ -873,9 +882,7 @@ let _loadSubModel = function (id, urlIndex, urls, loader) {
             return _loadSubModel(id, urlIndex + 1, urls, loader);
         }
         else {
-            loader.onError({ message: event.currentTarget ? event.currentTarget.statusText : 'Error during loading', subModel: id });
-
-            return throwError(event);
+            return _skipFailLoadedSubModel(id, loader);
         }
     }
 
@@ -889,7 +896,7 @@ let _loadSubModel = function (id, urlIndex, urls, loader) {
 let _loadSubModelAndParse = function (id, urlIndex, urls, loader) {
     return _loadSubModel(id, urlIndex, urls, loader)
         .tap((_) => {
-            loader.loadedLotIds[id] = true;
+            loader._markLoadedLotId(id);
         })
         .flatMap((text) => {
             return loader.parse(text, id);
