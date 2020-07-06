@@ -10,7 +10,6 @@
 <body>
 
     <!-- minified -->
-    <script src="src/lib/most.min.js"></script>
 
     <script src="js/three.js"></script>
     <script src="js/OrbitControls.js"></script>
@@ -28,18 +27,18 @@
         // let model = 'models/corvette_full.mpd';
         // let model = 'models/test3.mpd';
         // let model = 'models/test.ldr';
-        let model = 'models/4x4 pickup.ldr';
-        // let model = 'models/16x16 Microscale Modern House.ldr';
+        // let model = 'models/4x4 pickup.ldr';
+        let model = 'models/16x16 Microscale Modern House.ldr';
         // let model = 'models/Apple Tree Final.ldr';
         // let model = 'models/2015-05-10_Dirt-Valley.ldr';
-        
+
         // let model = 'models/test.mpd';
         // let model = 'models/test.dat';
 
         // Set up camera:
         // let camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000000);
 
-        let camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 0.1, 10000000 );
+        let camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000000);
 
         // camera.position.set(10000, 7000, 10000);
         // camera.position.set(10000, 7000, 200);
@@ -105,6 +104,7 @@
             .subscribe({
                 next: (data) => {
                     console.log("next: ", data)
+                    console.log("loadingProgress:", ldrLoader.getLoadingProgress());
                 },
                 error: (e) => {
                     console.log(e);

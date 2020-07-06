@@ -1,5 +1,5 @@
 import { fromPromise, throwError, just } from "most";
-import { concatArray} from "./external/utils/mostUtils";
+import { concatArray } from "./external/utils/mostUtils";
 
 import { adapter } from "./adapter/Adapter"
 import { LDRPartType } from "./LDRPartType"
@@ -69,6 +69,15 @@ export let LDRLoader = function (options) {
     // this.physicalRenderingAge = this.options.physicalRenderingAge || 0;
     this.mainModel;
 
+    // TODO refactor: new added feature(loading info)
+    this.totalLotCountInAllModels = 0;
+    // TODO extract exist hash map structure in reason!
+    this.needLoadLotIdsInAllModels = {};
+    this.loadedLotIds = {};
+
+
+
+
     this.buildAllPossibleUrls = this.options.buildAllPossibleUrls || function (id) {
         let lowerID = id.toLowerCase();
         return [
@@ -98,8 +107,214 @@ LDRLoader.prototype.setPartType = function (pt) {
     // }
 }
 
-LDRLoader.prototype.parse = function (data, defaultID) {
-    //console.log('Parsing', defaultID);
+
+
+LDRLoader.prototype._parseLineType1 = function (colorID, parts) {
+    for (let j = 2; j < 14; j++) {
+        parts[j] = parseFloat(parts[j]);
+    }
+    let position = adapter.Vector3.create(parts[2], parts[3], parts[4]);
+    let rotation = adapter.Matrix3.create(parts[5], parts[6], parts[7],
+        parts[8], parts[9], parts[10],
+        parts[11], parts[12], parts[13]);
+    let subModelID = parts.slice(14).join(" ").toLowerCase().replace('\\', '/');
+    // let subModel = new LDRPartDescription(colorID, position, rotation, subModelID, part.certifiedBFC && localCull, invertNext, texmapPlacement);
+    let subModel = new LDRPartDescription(colorID, position, rotation, subModelID);
+
+    // (inTexmapFallback ? texmapPlacement.fallback : step).addSubModel(subModel);
+    step.addSubModel(subModel);
+
+    let inHeader = false;
+    // invertNext = false;
+    return [subModel, inHeader];
+}
+
+
+
+LDRLoader.prototype._getLines = function (data) {
+    return data.split(/(\r\n)|\n/);
+}
+
+
+LDRLoader.prototype._getParts = function (line) {
+    return line.split(' ').filter(x => x !== ''); // Remove empty strings.
+}
+
+LDRLoader.prototype._getLineType = function (parts) {
+    return parseInt(parts[0]);
+}
+
+LDRLoader.prototype._is = function (type, parts) {
+    return parts.length >= 3 && type === parts[1];
+}
+
+// LDRLoader.prototype._getMainModelLines = function (dataLines) {
+//     let [_, lines] = dataLines.reduce(([findFILECount, lines], line) => {
+//         if (findFILECount >= 2) {
+//             return [findFILECount, lines];
+//         }
+//         if (this._is("FILE", this._getParts(line))) {
+//             findFILECount = findFILECount + 1;
+//         }
+
+//         if (findFILECount < 2) {
+//             lines.push(line)
+//         }
+
+//         return [findFILECount, lines];
+//     }, [0, []]);
+
+//     return lines;
+// }
+
+// LDRLoader.prototype._getMainModelLinesAndOtherModelLines = function (dataLines) {
+//     let [_, mainModelLines, otherModelLines] = dataLines.reduce(([findFILECount, mainModelLines, otherModelLines], line) => {
+//         if (this._is("FILE", this._getParts(line))) {
+//             findFILECount = findFILECount + 1;
+//         }
+
+//         if (findFILECount < 2) {
+//             mainModelLines.push(line);
+//         }
+//         else {
+//             otherModelLines.push(line);
+//         }
+
+//         return [findFILECount, mainModelLines, otherModelLines];
+//     }, [0, [], []]);
+
+//     return [mainModelLines, otherModelLines];
+// }
+
+
+
+
+LDRLoader.prototype._getSubModelId = function (parts) {
+    return parts.slice(14).join(" ").toLowerCase().replace('\\', '/');
+}
+
+let _canBeGenerated = (id) => {
+    return make(id) !== null;
+}
+
+// // Try to fetch those that can be generated:
+// let stillToBeFetched = [];
+// toBeFetched.forEach(id => {
+//     let pt = make(id)
+//     if (pt) {
+//         self.setPartType(pt);
+//     }
+//     else {
+//         stillToBeFetched.push(id);
+//     }
+// });
+
+
+// LDRLoader.prototype._getTotalLotDataInAllModels = function (data) {
+//     let self = this;
+//     let dataLines = this._getLines(data);
+
+//     return this._getMainModelLines(dataLines).reduce(([totalLotCountInAllModels, needLoadLotIdsInAllModels], line) => {
+//         let parts = self._getParts(line);
+
+//         if (self._getLineType(parts) === 1) {
+//             let subModelId = self._getSubModelId(parts);
+
+//             if (!!needLoadLotIdsInAllModels[subModelId] === false && !_canBeGenerated(subModelId)) {
+//                 needLoadLotIdsInAllModels[subModelId] = true;
+//                 totalLotCountInAllModels += 1;
+//             }
+//         }
+
+//         return [totalLotCountInAllModels, needLoadLotIdsInAllModels];
+//     }, [0, {}]);
+// }
+
+
+let _getOriginFileName = (parts) => {
+    return parts.slice(2).join(" ");
+};
+
+let _getFileName = (originalFileName) => {
+    return originalFileName.toLowerCase().replace('\\', '/'); // Normalize the name by bringing to lower case and replacing backslashes:
+};
+
+
+LDRLoader.prototype._getTotalLotDataInAllModels = function (data) {
+    let self = this;
+    let dataLines = this._getLines(data);
+
+    let needLoadLotIdsInAllModels = dataLines.reduce((needLoadLotIdsInAllModels, line) => {
+        let parts = self._getParts(line);
+
+        switch (self._getLineType(parts)) {
+            case 0:
+                if (self._is("FILE", parts)) {
+                    needLoadLotIdsInAllModels[
+                        _getFileName(_getOriginFileName(parts))
+                    ] = false;
+                }
+                break;
+            case 1:
+                let subModelId = self._getSubModelId(parts)
+
+                if (needLoadLotIdsInAllModels[subModelId] !== false) {
+                    needLoadLotIdsInAllModels[subModelId] = true;
+                }
+                break;
+        }
+
+        return needLoadLotIdsInAllModels;
+    }, {});
+
+    // TODO use filter
+    for (let lotId in needLoadLotIdsInAllModels) {
+        if (needLoadLotIdsInAllModels.hasOwnProperty(lotId)) {
+            if (_canBeGenerated(lotId)) {
+                needLoadLotIdsInAllModels[lotId] = false;
+            }
+        }
+    }
+
+
+    // TODO use reduce
+    let totalLotCountInAllModels = 0;
+    for (let lotId in needLoadLotIdsInAllModels) {
+        if (needLoadLotIdsInAllModels.hasOwnProperty(lotId)) {
+            if (!!needLoadLotIdsInAllModels[lotId]) {
+                totalLotCountInAllModels += 1;
+            }
+        }
+    }
+
+
+    return [totalLotCountInAllModels, needLoadLotIdsInAllModels];
+}
+
+
+
+LDRLoader.prototype.getLoadingProgress = function () {
+    if (this.totalLotCountInAllModels === 0) {
+        return 1;
+    }
+
+    let loadedLotCountInAllModels = 0;
+    for (let lotId in this.needLoadLotIdsInAllModels) {
+        if (this.needLoadLotIdsInAllModels.hasOwnProperty(lotId)) {
+            if (!!this.loadedLotIds[lotId]) {
+                loadedLotCountInAllModels += 1;
+            }
+        }
+    }
+
+
+    // TODO add ensure contract check:loadedLotCountInAllModels should <= this.totalLotCountInAllModels
+    return loadedLotCountInAllModels / this.totalLotCountInAllModels;
+}
+
+
+LDRLoader.prototype.parse = function (data, id) {
+    //console.log('Parsing', id);
     // let parseStartTime = new Date();
     let self = this;
 
@@ -139,18 +354,18 @@ LDRLoader.prototype.parse = function (data, defaultID) {
     // let texmapPlacement = null;
     // let inTexmapFallback = false;
 
-    let dataLines = data.split(/(\r\n)|\n/);
+    let dataLines = this._getLines(data);
     for (let i = 0; i < dataLines.length; i++) {
         let line = dataLines[i];
         if (!line) {
             continue; // Empty line, or 'undefined' due to '\r\n' split.
         }
 
-        let parts = line.split(' ').filter(x => x !== ''); // Remove empty strings.
+        let parts = this._getParts(line);
         if (parts.length <= 1) {
             continue; // Empty/ empty comment line
         }
-        let lineType = parseInt(parts[0]);
+        let lineType = this._getLineType(parts);
         // if (lineType === 0 && parts.length > 2 && texmapPlacement && parts[1] === '!:') {
         //     parts = parts.slice(2); // Texmap content.
         //     lineType = parseInt(parts[0]);
@@ -184,8 +399,10 @@ LDRLoader.prototype.parse = function (data, defaultID) {
 
         //console.log('Parsing line', i, 'of type', lineType, 'color', colorID, ':', line); // Useful if you encounter parse errors.
 
-        let l3 = parts.length >= 3;
-        let is = type => l3 && type === parts[1];
+        // TODO refactor
+        let is = (type) => {
+            return self._is(type, parts);
+        };
 
         // Set the model description
         if (!part.modelDescription && modelDescription) {
@@ -218,11 +435,11 @@ LDRLoader.prototype.parse = function (data, defaultID) {
                         closeStep(false);
 
                         if (!part.ID) { // No ID in main model: 
-                            console.warn(originalFileName, 'No ID in main model - setting default ID', defaultID);
+                            console.warn(originalFileName, 'No ID in main model - setting default ID', id);
                             console.dir(part); console.dir(step);
-                            part.ID = defaultID;
+                            part.ID = id;
                             if (!self.mainModel) {
-                                self.mainModel = defaultID;
+                                self.mainModel = id;
                             }
                         }
                         // if (!skipPart) {
@@ -242,11 +459,11 @@ LDRLoader.prototype.parse = function (data, defaultID) {
 
                 if (is("FILE")) {
                     hasFILE = true;
-                    handleFileLine(parts.slice(2).join(" "));
+                    handleFileLine(_getOriginFileName(parts));
                     // saveThisCommentLine = false;
                 }
                 else if (!hasFILE && is("file")) { // Special case where some very old files use '0 file' instead of the proper '0 FILE':
-                    handleFileLine(parts.slice(2).join(" "));
+                    handleFileLine(_getOriginFileName(parts));
                     // saveThisCommentLine = false;
                 }
                 else if (is("Name:")) {
@@ -431,7 +648,8 @@ LDRLoader.prototype.parse = function (data, defaultID) {
                 let rotation = adapter.Matrix3.create(parts[5], parts[6], parts[7],
                     parts[8], parts[9], parts[10],
                     parts[11], parts[12], parts[13]);
-                let subModelID = parts.slice(14).join(" ").toLowerCase().replace('\\', '/');
+                let subModelID = self._getSubModelId(parts);
+
                 // let subModel = new LDRPartDescription(colorID, position, rotation, subModelID, part.certifiedBFC && localCull, invertNext, texmapPlacement);
                 let subModel = new LDRPartDescription(colorID, position, rotation, subModelID);
 
@@ -501,7 +719,7 @@ LDRLoader.prototype.parse = function (data, defaultID) {
 
     part.addStep(step);
     if (!part.ID) {
-        part.ID = defaultID; // No name given in file.
+        part.ID = id; // No name given in file.
         if (!this.mainModel) {
             this.mainModel = part.ID;
         }
@@ -518,7 +736,7 @@ LDRLoader.prototype.parse = function (data, defaultID) {
     // }
 
     // return this.onPartsLoaded(loadedParts);
-    return this.onPartsLoaded(defaultID, loadedParts);
+    return this.onPartsLoaded(id, loadedParts);
 
     // // Save loaded parts into IndexedDB:
     // if (this.storage.db) {
@@ -567,6 +785,8 @@ LDRLoader.prototype.onPartsLoaded = function (id, loadedParts) {
             unloadedPartsList.push(id);
         }
     }
+
+
     loadedParts.forEach(pt => pt.steps.forEach(s => s.subModels.forEach(sm => checkPart(sm.ID))));
 
     // Set part info (part vs non-part):
@@ -593,12 +813,19 @@ LDRLoader.prototype.onPartsLoaded = function (id, loadedParts) {
     //     loadedParts.forEach(handleAssemblies);
     // }
 
+    let stream = null;
+
     if (unloadedPartsList.length > 0) {
-        return self.loadMultiple(id, unloadedPartsList);
+        stream = self.loadMultiple(id, unloadedPartsList);
     }
     else {
-        return just(id);
+        stream = just(id);
     }
+
+    return stream.tap((id) => {
+        self.loadedLotIds[id] = true;
+    })
+
 }
 
 
@@ -630,6 +857,11 @@ let _loadMainModel = function (url, loader) {
         adapter.Network.fetch(url, "text")
     )
         .flatMap((text) => {
+            let [totalLotCountInAllModels, needLoadLotIdsInAllModels] = loader._getTotalLotDataInAllModels(text);
+
+            loader.totalLotCountInAllModels = totalLotCountInAllModels;
+            loader.needLoadLotIdsInAllModels = needLoadLotIdsInAllModels;
+
             return loader.parse(text, "mainModel");
         })
 };
@@ -655,8 +887,10 @@ let _loadSubModel = function (id, urlIndex, urls, loader) {
 
 
 let _loadSubModelAndParse = function (id, urlIndex, urls, loader) {
-
     return _loadSubModel(id, urlIndex, urls, loader)
+        .tap((_) => {
+            loader.loadedLotIds[id] = true;
+        })
         .flatMap((text) => {
             return loader.parse(text, id);
         })
@@ -703,6 +937,13 @@ LDRLoader.prototype.loadMultiple = function (id, ids) {
         }
     });
 
+
+
+
+
+
+
+
     // onDone(stillToBeFetched);
     // return from(
     //     stillToBeFetched.map(this.load)
@@ -723,7 +964,7 @@ LDRLoader.prototype.loadMultiple = function (id, ids) {
  * id is transformed using 'buildUrls' which can be parsed to the loader using the options parameter in the constructor.
  */
 LDRLoader.prototype.load = function (modelUrl) {
-    return _loadMainModel(modelUrl, this)
+    return _loadMainModel(modelUrl, this);
 };
 
 
