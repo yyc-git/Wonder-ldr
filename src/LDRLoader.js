@@ -70,10 +70,10 @@ export let LDRLoader = function (options) {
     this.mainModel;
 
     // TODO refactor: new added feature(loading info)
-    this.totalLotCountInAllModels = 0;
+    this.totalFileCountInAllModels = 0;
     // TODO extract exist hash map structure in reason!
-    this.needLoadLotIdsInAllModels = {};
-    this.loadedLotIds = {};
+    this.needLoadFileIdsInAllModels = {};
+    this.loadedFileAndPartIds = {};
 
 
 
@@ -214,19 +214,19 @@ let _canBeGenerated = (id) => {
 //     let self = this;
 //     let dataLines = this._getLines(data);
 
-//     return this._getMainModelLines(dataLines).reduce(([totalLotCountInAllModels, needLoadLotIdsInAllModels], line) => {
+//     return this._getMainModelLines(dataLines).reduce(([totalFileCountInAllModels, needLoadFileIdsInAllModels], line) => {
 //         let parts = self._getParts(line);
 
 //         if (self._getLineType(parts) === 1) {
 //             let subModelId = self._getSubModelId(parts);
 
-//             if (!!needLoadLotIdsInAllModels[subModelId] === false && !_canBeGenerated(subModelId)) {
-//                 needLoadLotIdsInAllModels[subModelId] = true;
-//                 totalLotCountInAllModels += 1;
+//             if (!!needLoadFileIdsInAllModels[subModelId] === false && !_canBeGenerated(subModelId)) {
+//                 needLoadFileIdsInAllModels[subModelId] = true;
+//                 totalFileCountInAllModels += 1;
 //             }
 //         }
 
-//         return [totalLotCountInAllModels, needLoadLotIdsInAllModels];
+//         return [totalFileCountInAllModels, needLoadFileIdsInAllModels];
 //     }, [0, {}]);
 // }
 
@@ -244,13 +244,13 @@ LDRLoader.prototype._getTotalLotDataInAllModels = function (data) {
     let self = this;
     let dataLines = this._getLines(data);
 
-    let needLoadLotIdsInAllModels = dataLines.reduce((needLoadLotIdsInAllModels, line) => {
+    let needLoadFileIdsInAllModels = dataLines.reduce((needLoadFileIdsInAllModels, line) => {
         let parts = self._getParts(line);
 
         switch (self._getLineType(parts)) {
             case 0:
                 if (self._is("FILE", parts)) {
-                    needLoadLotIdsInAllModels[
+                    needLoadFileIdsInAllModels[
                         _getFileName(_getOriginFileName(parts))
                     ] = false;
                 }
@@ -258,58 +258,58 @@ LDRLoader.prototype._getTotalLotDataInAllModels = function (data) {
             case 1:
                 let subModelId = self._getSubModelId(parts)
 
-                if (needLoadLotIdsInAllModels[subModelId] !== false) {
-                    needLoadLotIdsInAllModels[subModelId] = true;
+                if (needLoadFileIdsInAllModels[subModelId] !== false) {
+                    needLoadFileIdsInAllModels[subModelId] = true;
                 }
                 break;
         }
 
-        return needLoadLotIdsInAllModels;
+        return needLoadFileIdsInAllModels;
     }, {});
 
     // TODO use filter
-    for (let lotId in needLoadLotIdsInAllModels) {
-        if (needLoadLotIdsInAllModels.hasOwnProperty(lotId)) {
+    for (let lotId in needLoadFileIdsInAllModels) {
+        if (needLoadFileIdsInAllModels.hasOwnProperty(lotId)) {
             if (_canBeGenerated(lotId)) {
-                needLoadLotIdsInAllModels[lotId] = false;
+                needLoadFileIdsInAllModels[lotId] = false;
             }
         }
     }
 
 
     // TODO use reduce
-    let totalLotCountInAllModels = 0;
-    for (let lotId in needLoadLotIdsInAllModels) {
-        if (needLoadLotIdsInAllModels.hasOwnProperty(lotId)) {
-            if (!!needLoadLotIdsInAllModels[lotId]) {
-                totalLotCountInAllModels += 1;
+    let totalFileCountInAllModels = 0;
+    for (let lotId in needLoadFileIdsInAllModels) {
+        if (needLoadFileIdsInAllModels.hasOwnProperty(lotId)) {
+            if (!!needLoadFileIdsInAllModels[lotId]) {
+                totalFileCountInAllModels += 1;
             }
         }
     }
 
 
-    return [totalLotCountInAllModels, needLoadLotIdsInAllModels];
+    return [totalFileCountInAllModels, needLoadFileIdsInAllModels];
 }
 
 
 
 LDRLoader.prototype.getLoadingProgress = function () {
-    if (this.totalLotCountInAllModels === 0) {
+    if (this.totalFileCountInAllModels === 0) {
         return 1;
     }
 
     let loadedLotCountInAllModels = 0;
-    for (let lotId in this.needLoadLotIdsInAllModels) {
-        if (this.needLoadLotIdsInAllModels.hasOwnProperty(lotId)) {
-            if (!!this.loadedLotIds[lotId]) {
+    for (let lotId in this.needLoadFileIdsInAllModels) {
+        if (this.needLoadFileIdsInAllModels.hasOwnProperty(lotId)) {
+            if (!!this.loadedFileAndPartIds[lotId]) {
                 loadedLotCountInAllModels += 1;
             }
         }
     }
 
 
-    // TODO add ensure contract check:loadedLotCountInAllModels should <= this.totalLotCountInAllModels
-    return loadedLotCountInAllModels / this.totalLotCountInAllModels;
+    // TODO add ensure contract check:loadedLotCountInAllModels should <= this.totalFileCountInAllModels
+    return loadedLotCountInAllModels / this.totalFileCountInAllModels;
 }
 
 
@@ -717,6 +717,17 @@ LDRLoader.prototype.parse = function (data, id) {
         }
     }
 
+    // TODO refactor
+    // (this code is to ensure part.modelDescription should exist)
+    if (!part.modelDescription) {
+        if (!!part.name) {
+            part.modelDescription = part.name;
+        }
+        else {
+            part.modelDescription = "Unknown!"
+        }
+    }
+
     part.addStep(step);
     if (!part.ID) {
         part.ID = id; // No name given in file.
@@ -823,14 +834,14 @@ LDRLoader.prototype.onPartsLoaded = function (id, loadedParts) {
     }
 
     return stream.tap((id) => {
-        self.loadedLotIds[id] = true;
+        self._markLoadedFileAndPartId(id);
     })
 
 }
 
 
-LDRLoader.prototype._markLoadedLotId = function (id) {
-    this.loadedLotIds[id] = true;
+LDRLoader.prototype._markLoadedFileAndPartId = function (id) {
+    this.loadedFileAndPartIds[id] = true;
 }
 
 
@@ -859,10 +870,10 @@ let _loadMainModel = function (url, loader) {
         adapter.Network.fetch(url, "text")
     )
         .flatMap((text) => {
-            let [totalLotCountInAllModels, needLoadLotIdsInAllModels] = loader._getTotalLotDataInAllModels(text);
+            let [totalFileCountInAllModels, needLoadFileIdsInAllModels] = loader._getTotalLotDataInAllModels(text);
 
-            loader.totalLotCountInAllModels = totalLotCountInAllModels;
-            loader.needLoadLotIdsInAllModels = needLoadLotIdsInAllModels;
+            loader.totalFileCountInAllModels = totalFileCountInAllModels;
+            loader.needLoadFileIdsInAllModels = needLoadFileIdsInAllModels;
 
             return loader.parse(text, "mainModel");
         })
@@ -871,13 +882,13 @@ let _loadMainModel = function (url, loader) {
 let _skipFailLoadedSubModel = (id, loader) => {
     loader.onError({ message: "can't find subModel, skip it", subModel: id });
 
-    loader._markLoadedLotId(id);
+    loader._markLoadedFileAndPartId(id);
 
     return empty();
 };
 
 let _loadSubModel = function (id, urlIndex, urls, loader) {
-    let tryLoadOtherUrl = function (event) {
+    let tryLoadOtherUrl = function (_event) {
         if (urlIndex < urls.length) {
             return _loadSubModel(id, urlIndex + 1, urls, loader);
         }
@@ -896,7 +907,7 @@ let _loadSubModel = function (id, urlIndex, urls, loader) {
 let _loadSubModelAndParse = function (id, urlIndex, urls, loader) {
     return _loadSubModel(id, urlIndex, urls, loader)
         .tap((_) => {
-            loader._markLoadedLotId(id);
+            loader._markLoadedFileAndPartId(id);
         })
         .flatMap((text) => {
             return loader.parse(text, id);
