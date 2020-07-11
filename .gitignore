@@ -20,3 +20,5 @@ src/**/.css.map
 
 
 node_modules/
+
+ldraw_parts_models/

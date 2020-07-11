@@ -28,7 +28,8 @@
         // let model = 'models/test3.mpd';
         // let model = 'models/test.ldr';
         // let model = 'models/4x4 pickup.ldr';
-        let model = 'models/16x16 Microscale Modern House.ldr';
+        // let model = 'models/16x16 Microscale Modern House.ldr';
+        let model = 'models/toyota-fj40-hardtop-v2_5.ldr';
         // let model = 'models/Apple Tree Final.ldr';
         // let model = 'models/2015-05-10_Dirt-Valley.ldr';
 
@@ -87,15 +88,10 @@
         let ldrLoader;
 
         ldrLoader = new ldr.LDRLoader({
-            idToUrl: (id) => {
-                if (!id.endsWith(".dat")) {
-                    return [id];
-                }
+            buildAllPossibleUrls: (id) => {
                 let lowerID = id.toLowerCase();
                 return [
-                    "ldraw_parts/" + lowerID,
-                    "ldraw_unofficial/parts" + lowerID,
-                    "ldraw_unofficial/p" + lowerID
+                    "ldraw_parts_models/" + lowerID
                 ];
             }
         });
@@ -103,7 +99,7 @@
         ldrLoader.load(model)
             .subscribe({
                 next: (data) => {
-                    console.log("next: ", data)
+                    // console.log("next: ", data)
                     console.log("loadingProgress:", ldrLoader.getLoadingProgress());
                 },
                 error: (e) => {
